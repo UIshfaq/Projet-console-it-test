@@ -39,7 +39,14 @@ app.get('/users', async (req, res) => {
     }
 });
 
+
+
+
+
+
+const PORT = process.env.PORT || 3000;
+
 // Démarrage serveur
-app.listen(process.env.PORT, () => {
-    console.log(`Serveur lancé sur http://localhost:${process.env.PORT}`);
+app.listen(PORT, () => {
+    console.log(`Serveur lancé sur http://localhost:${PORT}`);
 });
