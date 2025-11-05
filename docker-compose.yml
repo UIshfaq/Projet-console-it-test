@@ -1,17 +1,64 @@
 services:
   db:
-    image: postgres:15
-    container_name: postgres_bachelor
+    image: mysql:8.0
+    container_name: mysql_bachelor
     restart: always
     environment:
-      POSTGRES_USER: ${DB_USER}
-      POSTGRES_PASSWORD: ${DB_PASSWORD}
-      POSTGRES_DB: ${DB_NAME}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD} # Requis pour le healthcheck
+      MYSQL_DATABASE: ${DB_NAME}
+      MYSQL_USER: ${DB_USER}
+      MYSQL_PASSWORD: ${DB_PASSWORD}
     ports:
-      - "${DB_PORT}:5432"
+      - "${DB_PORT}:3306"
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - mysql_data:/var/lib/mysql
+
+    # --- MODIFICATION DU HEALTHCHECK ---
+    # On utilise le 'root' user, qui est plus fiable pour le test
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "--user=root", "-p${MYSQL_ROOT_PASSWORD}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    # --- FIN DE LA MODIFICATION ---
+
+  api:
+    build: ./backend
+    container_name: mon_api_express
+    restart: always
+    ports:
+      - "3000:3000"
+    environment:
+      - DB_HOST=db
+      - DB_USER=${DB_USER}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - DB_NAME=${DB_NAME}
+      - DB_PORT=3306
+      - PORT=3000
+    volumes:
+      - ./backend:/usr/src/app
+      - /usr/src/app/node_modules
+    command: npm run dev
+    depends_on:
+      db:
+        # On attend toujours que le healthcheck soit "healthy"
+        condition: service_healthy
+
+  # --- AJOUT DE PHPMYADMIN (comme demandé) ---
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin
+    container_name: pma_bachelor
+    restart: always
+    ports:
+      - "8082:80"  # Accessible sur http://localhost:8081
+    environment:
+      PMA_HOST: db       # Il se connecte au service 'db'
+      PMA_PORT: 3306
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+    depends_on:
+      db:
+        condition: service_healthy
+  # --- FIN DE L'AJOUT ---
 
 volumes:
-  postgres_data:
-
+  mysql_data:

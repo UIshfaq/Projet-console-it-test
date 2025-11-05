@@ -1,0 +1,8 @@
+# Ne pas copier les modules locaux
+../node_modules
+
+# Ne pas copier les logs
+npm-debug.log
+
+# Ne pas copier les fichiers d'environnement (ils seront injectés)
+.env
