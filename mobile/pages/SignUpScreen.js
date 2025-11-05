@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import {
     View,
     Text,
@@ -7,26 +7,23 @@ import {
     StyleSheet,
     SafeAreaView,
     StatusBar,
+    ScrollView, // Ajouté pour les écrans plus petits
 } from 'react-native';
 import { Ionicons, AntDesign } from '@expo/vector-icons';
 
+// Définir les mêmes constantes de couleur que dans LoginScreen
 // Couleur principale de l'application (le bleu/violet)
 const PRIMARY_COLOR = '#6A5AE0';
-// Couleur de fond de l'écran
 const SCREEN_BG_COLOR = '#F7F8F9';
-// Couleur du conteneur de formulaire blanc
 const FORM_CONTAINER_BG_COLOR = '#FFFFFF';
-// Couleur de bordure et d'icône grise
 const BORDER_COLOR = '#E0E0E0';
-// Couleur de texte gris
 const TEXT_GRAY_COLOR = '#8A8A8A';
-// Couleur de validation verte
 const VALID_COLOR = '#4CAF50';
 
-const LoginScreen = ({ navigation }) => {
-    const [email, setEmail] = useState('joe.doe@gmail.com');
+const SignUpScreen = ({ navigation }) => {
+    const [name, setName] = useState('Tayyab Sajjad');
+    const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
-    const [rememberMe, setRememberMe] = useState(false);
     const [isPasswordVisible, setIsPasswordVisible] = useState(false);
 
     return (
@@ -35,17 +32,17 @@ const LoginScreen = ({ navigation }) => {
 
             <View style={styles.topPattern} />
 
-            <View style={styles.container}>
+            {/* Utiliser ScrollView au cas où le clavier cache les champs */}
+            <ScrollView contentContainerStyle={styles.container}>
                 <TouchableOpacity
                     style={styles.backButton}
-                    onPress={() => navigation.goBack()} // Suppose qu'il y a un écran avant
-                >
+                    onPress={() => navigation.goBack()}>
                     <Ionicons name="arrow-back" size={24} color="#000" />
                 </TouchableOpacity>
 
                 <View style={styles.formContainer}>
-                    <Text style={styles.title}>Log in</Text>
-                    <Text style={styles.subtitle}>Log in with one of the following</Text>
+                    <Text style={styles.title}>Sign up</Text>
+                    <Text style={styles.subtitle}>Sign up with one of the following</Text>
 
                     <View style={styles.socialButtonContainer}>
                         <TouchableOpacity style={styles.socialButton}>
@@ -58,19 +55,30 @@ const LoginScreen = ({ navigation }) => {
                         </TouchableOpacity>
                     </View>
 
-                    <Text style={styles.label}>Email*</Text>
-                    <View style={[styles.inputContainer, email ? styles.inputValid : null]}>
+                    <Text style={styles.label}>Name*</Text>
+                    <View style={[styles.inputContainer, name ? styles.inputValid : null]}>
                         <TextInput
                             style={styles.input}
-                            placeholder="joe.doe@gmail.com"
+                            placeholder="Your name"
+                            value={name}
+                            onChangeText={setName}
+                            autoCapitalize="words"
+                        />
+                        {name && (
+                            <Ionicons name="checkmark-circle" size={22} color={VALID_COLOR} />
+                        )}
+                    </View>
+
+                    <Text style={styles.label}>Email*</Text>
+                    <View style={styles.inputContainer}>
+                        <TextInput
+                            style={styles.input}
+                            placeholder="Email"
                             value={email}
                             onChangeText={setEmail}
                             keyboardType="email-address"
                             autoCapitalize="none"
                         />
-                        {email && (
-                            <Ionicons name="checkmark-circle" size={22} color={VALID_COLOR} />
-                        )}
                     </View>
 
                     <Text style={styles.label}>Password*</Text>
@@ -91,48 +99,34 @@ const LoginScreen = ({ navigation }) => {
                         </TouchableOpacity>
                     </View>
 
-                    <View style={styles.optionsRow}>
-                        <TouchableOpacity
-                            style={styles.checkboxContainer}
-                            onPress={() => setRememberMe(!rememberMe)}>
-                            <Ionicons
-                                name={rememberMe ? 'checkbox' : 'checkbox-outline'}
-                                size={22}
-                                color={rememberMe ? PRIMARY_COLOR : TEXT_GRAY_COLOR}
-                            />
-                            <Text style={styles.checkboxText}>Remember info</Text>
-                        </TouchableOpacity>
-                        <TouchableOpacity>
-                            <Text style={styles.forgotPassword}>Forgot Password</Text>
-                        </TouchableOpacity>
-                    </View>
-
                     <TouchableOpacity style={styles.button}>
-                        <Text style={styles.buttonText}>Log In</Text>
+                        <Text style={styles.buttonText}>Sign up</Text>
                     </TouchableOpacity>
 
                     <TouchableOpacity
                         style={styles.linkTextContainer}
-                        onPress={() => navigation.navigate('SignUp')}>
+                        onPress={() => navigation.navigate('Login')}>
                         <Text style={styles.linkText}>
-                            First time here? <Text style={styles.linkTextBold}>Sign up for free</Text>
+                            Already Have Account? <Text style={styles.linkTextBold}>Log In</Text>
                         </Text>
                     </TouchableOpacity>
                 </View>
-            </View>
+            </ScrollView>
 
             <View style={styles.bottomPattern} />
         </SafeAreaView>
     );
 };
 
+// Les styles sont très similaires à LoginScreen.
+// Dans un vrai projet, vous pourriez créer un fichier de styles partagé.
 const styles = StyleSheet.create({
     safeArea: {
         flex: 1,
         backgroundColor: SCREEN_BG_COLOR,
     },
     container: {
-        flex: 1,
+        flexGrow: 1, // Permet au ScrollView de s'étendre
         paddingHorizontal: 16,
     },
     formContainer: {
@@ -143,10 +137,10 @@ const styles = StyleSheet.create({
     },
     backButton: {
         marginBottom: 16,
-        marginTop: 16, // Ajustez si la barre de statut est incluse
+        marginTop: 16,
         alignSelf: 'flex-start',
-        padding: 8, // Zone de clic plus grande
-        marginLeft: 8, // Aligner avec le padding du formulaire
+        padding: 8,
+        marginLeft: 8,
     },
     title: {
         fontSize: 28,
@@ -173,7 +167,7 @@ const styles = StyleSheet.create({
         borderRadius: 10,
         borderWidth: 1,
         borderColor: BORDER_COLOR,
-        marginHorizontal: 5, // Espace entre les boutons
+        marginHorizontal: 5,
     },
     socialButtonText: {
         marginLeft: 10,
@@ -205,24 +199,6 @@ const styles = StyleSheet.create({
         fontSize: 16,
         color: '#000',
     },
-    optionsRow: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        marginVertical: 15,
-    },
-    checkboxContainer: {
-        flexDirection: 'row',
-        alignItems: 'center',
-    },
-    checkboxText: {
-        marginLeft: 8,
-        color: TEXT_GRAY_COLOR,
-    },
-    forgotPassword: {
-        color: PRIMARY_COLOR,
-        fontWeight: '600',
-    },
     button: {
         backgroundColor: PRIMARY_COLOR,
         padding: 15,
@@ -248,13 +224,11 @@ const styles = StyleSheet.create({
     },
     // Espaces réservés pour les motifs décoratifs
     topPattern: {
-        height: 60, // Hauteur du motif du haut
-        // Style pour l'image ou le SVG du motif
+        height: 60,
     },
     bottomPattern: {
-        height: 60, // Hauteur du motif du bas
-        // Style pour l'image ou le SVG du motif
+        height: 60,
     },
 });
 
-export default LoginScreen;
+export default SignUpScreen;
