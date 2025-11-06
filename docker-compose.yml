@@ -35,6 +35,7 @@ services:
       - DB_NAME=${DB_NAME}
       - DB_PORT=3306
       - PORT=3000
+      - JWT_SECRET=${JWT_SECRET}
     volumes:
       - ./backend:/usr/src/app
       - /usr/src/app/node_modules
