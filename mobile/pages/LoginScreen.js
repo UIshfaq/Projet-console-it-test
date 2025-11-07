@@ -7,8 +7,12 @@ import {
     StyleSheet,
     SafeAreaView,
     StatusBar,
+    Alert,
 } from 'react-native';
 import { Ionicons, AntDesign } from '@expo/vector-icons';
+import axios from 'axios'
+import * as SecureStore from 'expo-secure-store'
+
 
 // Couleur principale de l'application (le bleu/violet)
 const PRIMARY_COLOR = '#6A5AE0';
@@ -28,6 +32,57 @@ const LoginScreen = ({ navigation }) => {
     const [password, setPassword] = useState('');
     const [rememberMe, setRememberMe] = useState(false);
     const [isPasswordVisible, setIsPasswordVisible] = useState(false);
+
+    const handleLogin = async () => {
+
+        // 1. Validation (avec 'return')
+        if (!email || !password) {
+            Alert.alert("Erreur", "Veuillez remplir tous les champs");
+            return;
+        }
+
+        // L'URL est parfaite (en supposant que 192.168.1.80 est toujours votre IP)
+        const backendUrl = "http://192.168.1.80:3000/auth/login";
+
+        try {
+            // L'appel Axios est parfait
+            const response = await axios.post(backendUrl, {
+                email: email,
+                password: password,
+            });
+
+            // 3. Récupération du Token (corrigée)
+            const token = response.data.token; // Ou const { token } = response.data;
+
+            // 4. Stockage du Token
+            await SecureStore.setItemAsync('userToken', token);
+
+            // 5. Alerte unique + Navigation (corrigée)
+            // On affiche le message du backend
+            Alert.alert(
+                "Succès",
+                response.data.message, // "Connexion réussie"
+                [
+                    {
+                        text: "OK",
+                        onPress: () => navigation.navigate('Home') // Navigue sur le clic
+                    }
+                ]
+            );
+
+        } catch (error) {
+            // 2. Gestion des erreurs (corrigée)
+            if (error.response) {
+                // Le backend a répondu (ex: mdp incorrect)
+                Alert.alert('Erreur', error.response.data.message);
+            } else {
+                // Erreur de réseau (ex: serveur éteint, mauvaise IP)
+                Alert.alert('Erreur', 'Impossible de se connecter au serveur.');
+                console.error(error); // Pour le débogage
+            }
+        }
+    }
+
 
     return (
         <SafeAreaView style={styles.safeArea}>
@@ -107,7 +162,7 @@ const LoginScreen = ({ navigation }) => {
                         </TouchableOpacity>
                     </View>
 
-                    <TouchableOpacity style={styles.button}>
+                    <TouchableOpacity style={styles.button} onPress={handleLogin}>
                         <Text style={styles.buttonText}>Log In</Text>
                     </TouchableOpacity>
 
