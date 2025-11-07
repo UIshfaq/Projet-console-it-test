@@ -7,9 +7,13 @@ import {
     StyleSheet,
     SafeAreaView,
     StatusBar,
-    ScrollView, // Ajouté pour les écrans plus petits
+    ScrollView,
+    Alert, // importer Alert ici si besoin
 } from 'react-native';
 import { Ionicons, AntDesign } from '@expo/vector-icons';
+import axios from 'axios';
+
+
 
 // Définir les mêmes constantes de couleur que dans LoginScreen
 // Couleur principale de l'application (le bleu/violet)
@@ -21,10 +25,49 @@ const TEXT_GRAY_COLOR = '#8A8A8A';
 const VALID_COLOR = '#4CAF50';
 
 const SignUpScreen = ({ navigation }) => {
-    const [name, setName] = useState('Tayyab Sajjad');
+    const [name, setName] = useState('');
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [isPasswordVisible, setIsPasswordVisible] = useState(false);
+
+    const handleSignup = async () => {
+
+        // Votre validation est PARFAITE
+        if (!name || !email || !password) {
+            Alert.alert("Erreur", "Veuillez remplir tous les champs.");
+            return;
+        }
+
+        // <-- CORRECTION 1 & 2 : L'URL complète avec votre IP
+        const backendUrl = "http://192.168.1.80:3000/auth/register";
+
+        try {
+            // <-- CORRECTION 3, 4 & 5 : Envoyer un objet { nom, email, password }
+            const response = await axios.post(backendUrl, {
+                nom: name, // On envoie 'name' sous la clé 'nom'
+                email: email,
+                password: password
+            });
+
+            // <-- CORRECTION 7 : 'text' au lieu de 'test'
+            Alert.alert(
+                "Succès",
+                response.data.message,
+                [{ text: "OK", onPress: () => navigation.navigate('Login') }]
+            );
+
+        } catch (error) {
+            if (error.response) {
+                // <-- CORRECTION 6 : error.response.data.message
+                // Le backend a répondu avec une erreur (ex: email déjà pris)
+                Alert.alert('Erreur', error.response.data.message);
+            } else {
+                // Erreur de réseau (ex: backend non lancé, mauvaise IP)
+                Alert.alert('Erreur', 'Impossible de se connecter au serveur.');
+                console.error(error); // Très utile pour déboguer
+            }
+        }
+    }
 
     return (
         <SafeAreaView style={styles.safeArea}>
@@ -99,8 +142,8 @@ const SignUpScreen = ({ navigation }) => {
                         </TouchableOpacity>
                     </View>
 
-                    <TouchableOpacity style={styles.button}>
-                        <Text style={styles.buttonText}>Sign up</Text>
+                    <TouchableOpacity style={styles.button}  onPress={handleSignup}>
+                        <Text style={styles.buttonText}  >Sign up</Text>
                     </TouchableOpacity>
 
                     <TouchableOpacity

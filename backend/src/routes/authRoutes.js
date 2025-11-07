@@ -8,9 +8,6 @@ const bcrypt = require('bcryptjs');
 const jwt = require("jsonwebtoken");
 const pool = require('../db-connection'); // Notre connexion BDD
 
-//==============================================
-// ROUTE 1: INSCRIPTION (REGISTER) - (PARFAITE)
-//==============================================
 router.post('/register', async (req, res) => {
     try {
         const { nom, email, password } = req.body;
@@ -43,9 +40,6 @@ router.post('/register', async (req, res) => {
     }
 });
 
-//==============================================
-// ROUTE 2: CONNEXION (LOGIN) - (CORRIGÉE)
-//==============================================
 router.post('/login', async (req, res) => {
     try {
         const { email, password } = req.body;
