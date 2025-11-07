@@ -171,6 +171,7 @@ const styles = StyleSheet.create({
     container: {
         flexGrow: 1, // Permet au ScrollView de s'étendre
         paddingHorizontal: 16,
+        paddingBottom: 250 // (Essayez 150, vous pouvez changer si ce n'est pas assez)
     },
     formContainer: {
         backgroundColor: FORM_CONTAINER_BG_COLOR,

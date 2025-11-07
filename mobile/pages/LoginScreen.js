@@ -8,6 +8,9 @@ import {
     SafeAreaView,
     StatusBar,
     Alert,
+    KeyboardAvoidingView,
+    ScrollView,
+    Platform,
 } from 'react-native';
 import { Ionicons, AntDesign } from '@expo/vector-icons';
 import axios from 'axios'
@@ -28,7 +31,7 @@ const TEXT_GRAY_COLOR = '#8A8A8A';
 const VALID_COLOR = '#4CAF50';
 
 const LoginScreen = ({ navigation }) => {
-    const [email, setEmail] = useState('joe.doe@gmail.com');
+    const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [rememberMe, setRememberMe] = useState(false);
     const [isPasswordVisible, setIsPasswordVisible] = useState(false);
@@ -85,20 +88,29 @@ const LoginScreen = ({ navigation }) => {
 
 
     return (
-        <SafeAreaView style={styles.safeArea}>
-            <StatusBar barStyle="dark-content" backgroundColor={SCREEN_BG_COLOR} />
+        <KeyboardAvoidingView
+            behavior={Platform.OS === "ios" ? "padding" : "height"}
+            style={styles.kavContainer} // On lui donne un style
+        >
+            <SafeAreaView style={styles.safeArea}>
+                <StatusBar barStyle="dark-content" backgroundColor={SCREEN_BG_COLOR} />
 
-            <View style={styles.topPattern} />
+                <View style={styles.topPattern} />
 
-            <View style={styles.container}>
-                <TouchableOpacity
-                    style={styles.backButton}
-                    onPress={() => navigation.goBack()} // Suppose qu'il y a un écran avant
+                {/* <-- CHANGEMENT 2 : View devient ScrollView */}
+                <ScrollView
+                    style={styles.container} // Le style est conservé
+                    contentContainerStyle={styles.scrollContent} // On ajoute ce style
                 >
-                    <Ionicons name="arrow-back" size={24} color="#000" />
-                </TouchableOpacity>
+                    <TouchableOpacity
+                        style={styles.backButton}
+                        onPress={() => navigation.goBack()}
+                    >
+                        <Ionicons name="arrow-back" size={24} color="#000" />
+                    </TouchableOpacity>
 
-                <View style={styles.formContainer}>
+                    {/* Votre formulaire est ici. Il est PARFAIT. */}
+                    <View style={styles.formContainer}>
                     <Text style={styles.title}>Log in</Text>
                     <Text style={styles.subtitle}>Log in with one of the following</Text>
 
@@ -173,15 +185,24 @@ const LoginScreen = ({ navigation }) => {
                             First time here? <Text style={styles.linkTextBold}>Sign up for free</Text>
                         </Text>
                     </TouchableOpacity>
-                </View>
-            </View>
+                    </View>
+                </ScrollView>
 
-            <View style={styles.bottomPattern} />
-        </SafeAreaView>
-    );
-};
+                <View style={styles.bottomPattern} />
+            </SafeAreaView>
+        </KeyboardAvoidingView>
+    )};
 
 const styles = StyleSheet.create({
+
+    kavContainer: { // <-- NOUVEAU STYLE (pour KeyboardAvoidingView)
+        flex: 1,
+    },
+
+    scrollContent: { // <-- NOUVEAU STYLE (pour le contenu du ScrollView)
+        flexGrow: 1, // Permet au contenu de s'étendre
+    },
+
     safeArea: {
         flex: 1,
         backgroundColor: SCREEN_BG_COLOR,
