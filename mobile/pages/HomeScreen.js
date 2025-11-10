@@ -1,15 +1,24 @@
 import { StyleSheet, Text, View, TouchableOpacity } from "react-native";
+import { useContext } from "react";
+import { AuthContext } from "../contextes/AuthContexte";
 
 function HomeScreen({ navigation }) {
+
+    // On récupère la fonction "logout" du contexte (c'est parfait)
+    const { logout } = useContext(AuthContext);
+
     return (
         <View style={styles.container}>
             <Text style={styles.title}>Bienvenue !</Text>
-            <Text style={styles.subtitle}>Connectez-vous pour accéder à toutes les fonctionnalités.</Text>
+            {/* Le sous-titre doit confirmer la connexion, pas demander de se connecter */}
+            <Text style={styles.subtitle}>Vous êtes connecté et pouvez commencer le travail.</Text>
+
+            {/* CORRECTION : Remplacer "Se connecter" par "Se déconnecter" */}
             <TouchableOpacity
                 style={styles.buttonContainer}
-                onPress={() => navigation.navigate('Login')}
+                onPress={logout} // <-- APPELLE LA FONCTION LOGOUT
             >
-                <Text style={styles.buttonText}>Se connecter</Text>
+                <Text style={styles.buttonText}>Se déconnecter</Text>
             </TouchableOpacity>
         </View>
     );
@@ -38,7 +47,7 @@ const styles = StyleSheet.create({
     buttonContainer: {
         width: '90%',
         height: 50,
-        backgroundColor: '#007BFF',
+        backgroundColor: '#E74C3C', // Couleur Rouge pour la déconnexion
         justifyContent: 'center',
         alignItems: 'center',
         borderRadius: 8,

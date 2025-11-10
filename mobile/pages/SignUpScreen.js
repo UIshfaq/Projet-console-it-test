@@ -35,7 +35,6 @@ const SignUpScreen = ({ navigation }) => {
 
         const backendUrl = `${process.env.EXPO_PUBLIC_API_URL}/auth/register`;
 
-        console.log("J'essaie d'appeler cette URL :", backendUrl);
         try {
             const response = await axios.post(backendUrl, {
                 nom: name,
