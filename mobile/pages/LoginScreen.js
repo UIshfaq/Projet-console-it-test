@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, {useContext, useState} from 'react';
 import {
     View,
     Text,
@@ -14,7 +14,8 @@ import {
 } from 'react-native';
 import { Ionicons, AntDesign } from '@expo/vector-icons';
 import axios from 'axios'
-import * as SecureStore from 'expo-secure-store'
+
+import {AuthContext} from "../contextes/AuthContexte";
 
 
 // Couleur principale de l'application (le bleu/violet)
@@ -35,6 +36,7 @@ const LoginScreen = ({ navigation }) => {
     const [password, setPassword] = useState('');
     const [rememberMe, setRememberMe] = useState(false);
     const [isPasswordVisible, setIsPasswordVisible] = useState(false);
+    const { login } = useContext(AuthContext);
 
     const handleLogin = async () => {
 
@@ -48,40 +50,23 @@ const LoginScreen = ({ navigation }) => {
         const backendUrl = "http://192.168.1.80:3000/auth/login";
 
         try {
-            // L'appel Axios est parfait
             const response = await axios.post(backendUrl, {
                 email: email,
-                password: password,
+                password: password
             });
 
-            // 3. Récupération du Token (corrigée)
-            const token = response.data.token; // Ou const { token } = response.data;
 
-            // 4. Stockage du Token
-            await SecureStore.setItemAsync('userToken', token);
+            login(response.data.token);
 
-            // 5. Alerte unique + Navigation (corrigée)
-            // On affiche le message du backend
-            Alert.alert(
-                "Succès",
-                response.data.message, // "Connexion réussie"
-                [
-                    {
-                        text: "OK",
-                        onPress: () => navigation.navigate('Home') // Navigue sur le clic
-                    }
-                ]
-            );
 
         } catch (error) {
-            // 2. Gestion des erreurs (corrigée)
+            // NE TOUCHEZ PAS AU CATCH
+            // C'est parfait de garder l'alerte d'erreur ici.
             if (error.response) {
-                // Le backend a répondu (ex: mdp incorrect)
                 Alert.alert('Erreur', error.response.data.message);
             } else {
-                // Erreur de réseau (ex: serveur éteint, mauvaise IP)
                 Alert.alert('Erreur', 'Impossible de se connecter au serveur.');
-                console.error(error); // Pour le débogage
+                console.error(error);
             }
         }
     }
