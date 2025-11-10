@@ -5,4 +5,4 @@
 npm-debug.log
 
 # Ne pas copier les fichiers d'environnement (ils seront injectés)
-.env
+../.env

@@ -1,7 +1,8 @@
 const express = require('express');
+const cors = require('cors')
 const app = express();
 app.use(express.json()); // Middleware pour lire le JSON
-
+app.use(cors());
 // On importe le pool juste pour tester la connexion au début
 const pool = require('./db-connection');
 

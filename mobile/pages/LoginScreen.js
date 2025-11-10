@@ -46,8 +46,8 @@ const LoginScreen = ({ navigation }) => {
             return;
         }
 
-        // L'URL est parfaite (en supposant que 192.168.1.80 est toujours votre IP)
-        const backendUrl = "http://192.168.1.80:3000/auth/login";
+
+        const backendUrl = `${process.env.EXPO_PUBLIC_API_URL}/auth/login`;
 
         try {
             const response = await axios.post(backendUrl, {
@@ -75,8 +75,7 @@ const LoginScreen = ({ navigation }) => {
     return (
         <KeyboardAvoidingView
             behavior={Platform.OS === "ios" ? "padding" : "height"}
-            style={styles.kavContainer} // On lui donne un style
-        >
+            style={styles.kavContainer}>
             <SafeAreaView style={styles.safeArea}>
                 <StatusBar barStyle="dark-content" backgroundColor={SCREEN_BG_COLOR} />
 
@@ -111,19 +110,33 @@ const LoginScreen = ({ navigation }) => {
                     </View>
 
                     <Text style={styles.label}>Email*</Text>
-                    <View style={[styles.inputContainer, email ? styles.inputValid : null]}>
-                        <TextInput
-                            style={styles.input}
-                            placeholder="joe.doe@gmail.com"
-                            value={email}
-                            onChangeText={setEmail}
-                            keyboardType="email-address"
-                            autoCapitalize="none"
-                        />
-                        {email && (
-                            <Ionicons name="checkmark-circle" size={22} color={VALID_COLOR} />
-                        )}
-                    </View>
+                        <View style={[styles.inputContainer, email ? styles.inputValid : null]}>
+                            <TextInput
+                                style={styles.input}
+                                placeholder="joe.doe@gmail.com"
+                                value={email}
+                                onChangeText={setEmail}
+                                keyboardType="email-address"
+                                autoCapitalize="none"
+                            />
+
+                            {/* --- LOGIQUE D'ICÔNE CORRIGÉE --- */}
+                            {email ? (
+                                // SI email n'est pas vide: Montre la coche
+                                <Ionicons
+                                    name="checkmark-circle"
+                                    size={22}
+                                    color={VALID_COLOR}
+                                />
+                            ) : (
+                                // SINON (s'il est vide): Montre l'enveloppe
+                                <Ionicons
+                                    name="mail-outline" // <-- L'icône par défaut
+                                    size={22}
+                                    color={TEXT_GRAY_COLOR} // <-- Couleur grise
+                                />
+                            )}
+                        </View>
 
                     <Text style={styles.label}>Password*</Text>
                     <View style={styles.inputContainer}>

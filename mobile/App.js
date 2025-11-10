@@ -15,21 +15,19 @@ import LoadingScreen from "./pages/loadScreen"; // Vous l'aviez déjà, c'est bi
 const Stack = createStackNavigator();
 
 // === ÉTAPE 2 : AJOUTEZ CE CODE ===
-// (Vous aviez un commentaire "//..." à la place)
-//
 // Le "monde" déconnecté
+// Le "monde" déconnecté (Version Propre)
 const AuthNavigator = () => (
-    <Stack.Navigator screenOptions={{ headerShown: false }}> {/* J'ai caché le header, c'est plus joli */}
-        <Stack.Screen name="Login" component={LoginScreen}/>
-        <Stack.Screen name="Signup" component={SignUpScreen}/>
+    <Stack.Navigator screenOptions={{ headerShown: false }}>
+        <Stack.Screen name="Login" component={LoginScreen} />
+        <Stack.Screen name="SignUp" component={SignUpScreen} />
     </Stack.Navigator>
 );
 
-// Le "monde" connecté
+// Le "monde" connecté (Version Propre)
 const AppNavigator = () => (
     <Stack.Navigator>
-        <Stack.Screen name="Home" component={HomeScreen}/>
-        {/* On ajoutera le Planning et l'Inventaire ici plus tard */}
+        <Stack.Screen name="Home" component={HomeScreen} />
     </Stack.Navigator>
 );
 // =================================
