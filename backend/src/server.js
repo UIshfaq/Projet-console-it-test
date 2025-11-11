@@ -1,18 +1,17 @@
 const express = require('express');
 const cors = require('cors')
 const app = express();
-app.use(express.json()); // Middleware pour lire le JSON
+const pool = require('./db-connection'); // Assurez-vous que ce chemin est correct
+
 app.use(cors());
-// On importe le pool juste pour tester la connexion au début
-const pool = require('./db-connection');
+
+// 2. Middleware pour lire et parser le corps des requêtes en JSON
+app.use(express.json());
 
 // --- Importer et "brancher" les routes ---
 const authRoutes = require('./routes/authRoutes');
 app.use('/auth', authRoutes); // Préfixe: /auth/register, /auth/login, etc.
 
-
-// (Vous pouvez garder vos routes /users ici pour l'instant si vous voulez)
-// (Mais idéalement, elles iraient dans 'routes/userRoutes.js')
 
 
 // --- Démarrage du serveur ---

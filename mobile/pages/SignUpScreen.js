@@ -21,19 +21,49 @@ const BORDER_COLOR = '#E0E0E0';
 const VALID_COLOR = '#4CAF50';
 const TEXT_GRAY_COLOR = '#8A8A8A';
 
+const emailRegex = /\S+@\S+\.\S+/;
+
 const SignUpScreen = ({ navigation }) => {
     const [name, setName] = useState('');
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [isPasswordVisible, setIsPasswordVisible] = useState(false);
+    const [isEmailValid, setIsEmailValid] = useState(false);
+    const [statusMessage, setStatusMessage] = useState(''); // Pour afficher le statut en bas de l'écran
+
+    // Logique de changement d'email
+    const handleEmailChange = (text) => {
+        setEmail(text);
+        setIsEmailValid(emailRegex.test(text)); // Met à jour l'état de validation
+    };
 
     const handleSignup = async () => {
+        setStatusMessage(''); // Réinitialise le message
+
+        // --- 1. Validations Front-end ---
         if (!name || !email || !password) {
+            setStatusMessage('Erreur: Veuillez remplir tous les champs.');
             Alert.alert('Erreur', 'Veuillez remplir tous les champs.');
             return;
         }
 
-        const backendUrl = `${process.env.EXPO_PUBLIC_API_URL}/auth/register`;
+        if (password.length < 8 || !/\d/.test(password) || !/[a-z]/.test(password) || !/[!@#$%^&*]/.test(password)|| !/[A-Z]/.test(password)) {
+            setStatusMessage("Erreur: Le mot de passe doit contenir au moins 8 caractères.");
+            Alert.alert("Erreur", "Le mot de passe doit contenir au moins 8 caractères. Il doit inclure des lettres, des chiffres, des caractères spéciaux et majuscle.");
+            return;
+        }
+
+        if (!isEmailValid) {
+            setStatusMessage("Erreur: Veuillez entrer une adresse e-mail valide.");
+            Alert.alert("Erreur", "Veuillez entrer une adresse e-mail valide.");
+            return;
+        }
+
+        // Simuler la variable d'environnement (si elle n'est pas définie dans l'émulateur)
+        // ATTENTION : Changez cette ligne si votre variable d'env est l'unique source
+        const backendUrl = `${process.env.EXPO_PUBLIC_API_URL || 'http://192.168.1.52:3000'}/auth/register`;
+
+
 
         try {
             const response = await axios.post(backendUrl, {
@@ -42,15 +72,28 @@ const SignUpScreen = ({ navigation }) => {
                 password: password,
             });
 
-            Alert.alert('Succès', response.data.message, [
+            // --- SUCCÈS ---
+            const message = response.data.message || 'Inscription réussie !';
+            setStatusMessage(`Succès: ${message}`);
+
+            // Si l'alerte n'apparaît pas, le message de statut prend le relais
+            Alert.alert('Succès', message, [
                 { text: 'OK', onPress: () => navigation.push('Login') },
             ]);
+
         } catch (error) {
+            console.error("ERREUR AXIOS COMPLÈTE:", error);
+
             if (error.response) {
-                Alert.alert('Erreur', error.response.data.message);
+                // Erreur serveur (ex: Email déjà utilisé)
+                const msg = error.response.data.message || "Erreur serveur inconnue (4xx/5xx)";
+                setStatusMessage(`Erreur Serveur: ${msg}`);
+                Alert.alert('Erreur', msg);
             } else {
-                Alert.alert('Erreur', 'Impossible de se connecter au serveur.');
-                console.error(error);
+                // Erreur réseau (ECONNREFUSED, timeout, etc.)
+                const msg = 'Impossible de se connecter au serveur. Vérifiez l\'URL et votre réseau.';
+                setStatusMessage(`Erreur Réseau: ${msg}`);
+                Alert.alert('Erreur', msg);
             }
         }
     };
@@ -63,7 +106,7 @@ const SignUpScreen = ({ navigation }) => {
 
                 <View style={styles.formCompactContainer}>
                     {/* Name */}
-                    <View style={[styles.inputContainer, name ? styles.inputValid : null]}>
+                    <View style={[styles.inputContainer, name.length > 0 ? styles.inputValid : null]}>
                         <TextInput
                             style={styles.input}
                             placeholder="Name"
@@ -71,31 +114,33 @@ const SignUpScreen = ({ navigation }) => {
                             onChangeText={setName}
                             autoCapitalize="words"
                         />
-                        {name ? <Ionicons name="checkmark-circle" size={22} color={VALID_COLOR} /> : null}
+                        {name.length > 0 ? <Ionicons name="checkmark-circle" size={22} color={VALID_COLOR} /> : null}
                     </View>
 
                     {/* Email */}
-                    <View style={styles.inputContainer}>
+                    <View style={[styles.inputContainer, isEmailValid ? styles.inputValid : null]}>
                         <TextInput
                             style={styles.input}
                             placeholder="Email"
                             value={email}
-                            onChangeText={setEmail}
+                            onChangeText={handleEmailChange}
                             keyboardType="email-address"
                             autoCapitalize="none"
                         />
+                        {isEmailValid ? <Ionicons name="checkmark-circle" size={22} color={VALID_COLOR} /> : null}
                     </View>
 
                     {/* Password */}
-                    <View style={styles.inputContainer}>
+                    <View style={[styles.inputContainer, password.length >= 8 ? styles.inputValid : null]}>
                         <TextInput
                             style={styles.input}
-                            placeholder="Password"
+                            placeholder="Password (min. 8 chars)"
                             value={password}
                             onChangeText={setPassword}
                             secureTextEntry={!isPasswordVisible}
                         />
-                        <TouchableOpacity onPress={() => setIsPasswordVisible(!isPasswordVisible)}>
+                        {password.length >= 8 ? <Ionicons name="checkmark-circle" size={22} color={VALID_COLOR} /> : null}
+                        <TouchableOpacity onPress={() => setIsPasswordVisible(!isPasswordVisible)} style={{ paddingLeft: 10 }}>
                             <Ionicons
                                 name={isPasswordVisible ? 'eye-off-outline' : 'eye-outline'}
                                 size={22}
@@ -103,6 +148,9 @@ const SignUpScreen = ({ navigation }) => {
                             />
                         </TouchableOpacity>
                     </View>
+
+                    {/* Affichage du message de statut pour le débogage (plus fiable que Alert) */}
+                    {statusMessage ? <Text style={statusMessage.startsWith('Erreur') ? styles.statusTextError : styles.statusTextSuccess}>{statusMessage}</Text> : null}
 
                     {/* Sign Up Button */}
                     <TouchableOpacity style={styles.button} onPress={handleSignup}>
@@ -130,6 +178,7 @@ const styles = StyleSheet.create({
     container: {
         flexGrow: 1,
         padding: 16,
+        justifyContent: 'center',
     },
     title: {
         fontSize: 28,
@@ -180,6 +229,20 @@ const styles = StyleSheet.create({
     linkTextBold: {
         color: PRIMARY_COLOR,
         fontWeight: 'bold',
+    },
+    statusTextError: {
+        textAlign: 'center',
+        marginBottom: 10,
+        fontSize: 14,
+        color: 'red',
+        fontWeight: '500',
+    },
+    statusTextSuccess: {
+        textAlign: 'center',
+        marginBottom: 10,
+        fontSize: 14,
+        color: VALID_COLOR,
+        fontWeight: '500',
     },
 });
 

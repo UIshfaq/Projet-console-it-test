@@ -1,18 +1,15 @@
 import React, { createContext, useState, useEffect } from 'react';
-import { Platform } from 'react-native'; // <-- CORRECTION N°2 (Import manquant)
+import { Platform } from 'react-native';
 import * as SecureStore from 'expo-secure-store';
-import AsyncStorage from '@react-native-async-storage/async-storage'; // <-- CORRECTION N°1 (Le bon import)
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
-// 1. On crée le "contexte"
 const AuthContext = createContext();
 
-// 2. On crée le "Fournisseur"
 const AuthProvider = ({ children }) => {
     const [isLoading, setIsLoading] = useState(true);
     const [userToken, setUserToken] = useState(null);
 
-    // --- CORRECTION N°3 (Logique de useEffect) ---
-    // Cette fonction vérifie le token AU DÉMARRAGE
+
     useEffect(() => {
         const checkToken = async () => {
             let token;
@@ -31,13 +28,13 @@ const AuthProvider = ({ children }) => {
             setIsLoading(false);
         };
         checkToken();
-    }, []); // Le [] vide est crucial (s'exécute 1 fois)
+    }, []);
 
 
-    // 3. On crée les fonctions "login" et "logout"
+
     const authContextValue = {
 
-        // --- CORRECTION N°4 (Logique de login) ---
+
         login: async (token) => {
             setIsLoading(true);
             try {
@@ -55,7 +52,7 @@ const AuthProvider = ({ children }) => {
             setIsLoading(false);
         },
 
-        // --- CORRECTION N°4 (Logique de logout) ---
+
         logout: async () => {
             setIsLoading(true);
             try {
