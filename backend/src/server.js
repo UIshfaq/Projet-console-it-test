@@ -1,6 +1,7 @@
 const express = require('express');
 const cors = require('cors')
 const app = express();
+const verifyToken = require('./middlewares/authMiddleware');
 const pool = require('./db-connection'); // Assurez-vous que ce chemin est correct
 
 app.use(cors());

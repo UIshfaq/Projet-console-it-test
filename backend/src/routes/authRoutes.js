@@ -49,7 +49,8 @@ router.post('/login', async (req, res) => {
         }
 
         const [users] = await pool.query(
-            'SELECT * FROM users WHERE email = ?',
+            // C'EST CORRECT : On sélectionne explicitement password_hash
+            'SELECT id, nom, email, role, password_hash FROM users WHERE email = ?',
             [email]
         );
 
@@ -58,12 +59,6 @@ router.post('/login', async (req, res) => {
         }
 
         const user = users[0];
-
-        // --- DÉBUT DE LA CORRECTION ---
-        // Les 4 lignes de 'register' qui étaient ici ONT ÉTÉ SUPPRIMÉES.
-        // On passe directement à la comparaison :
-        // --- FIN DE LA CORRECTION ---
-
         const isMatch = await bcrypt.compare(password, user.password_hash);
 
         if (isMatch === false) {

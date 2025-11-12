@@ -18,17 +18,12 @@ import axios from 'axios'
 import {AuthContext} from "../contextes/AuthContexte";
 
 
-// Couleur principale de l'application (le bleu/violet)
+// ... (Toutes vos couleurs et constantes restent les mêmes)
 const PRIMARY_COLOR = '#6A5AE0';
-// Couleur de fond de l'écran
 const SCREEN_BG_COLOR = '#F7F8F9';
-// Couleur du conteneur de formulaire blanc
 const FORM_CONTAINER_BG_COLOR = '#FFFFFF';
-// Couleur de bordure et d'icône grise
 const BORDER_COLOR = '#E0E0E0';
-// Couleur de texte gris
 const TEXT_GRAY_COLOR = '#8A8A8A';
-// Couleur de validation verte
 const VALID_COLOR = '#4CAF50';
 
 const LoginScreen = ({ navigation }) => {
@@ -36,37 +31,48 @@ const LoginScreen = ({ navigation }) => {
     const [password, setPassword] = useState('');
     const [rememberMe, setRememberMe] = useState(false);
     const [isPasswordVisible, setIsPasswordVisible] = useState(false);
+
+    // Vous le récupérez déjà ici, c'est parfait
     const { login } = useContext(AuthContext);
 
     const handleLogin = async () => {
 
-        // 1. Validation (avec 'return')
         if (!email || !password) {
             Alert.alert("Erreur", "Veuillez remplir tous les champs");
             return;
         }
 
-
+        // L'URL est correcte (assurez-vous que EXPO_PUBLIC_API_URL est défini)
         const backendUrl = `${process.env.EXPO_PUBLIC_API_URL}/auth/login`;
 
         try {
             const response = await axios.post(backendUrl, {
                 email: email,
-                password: password
+                password: password,
             });
 
+            const { token, user } = response.data;
 
-            login(response.data.token);
+            // --- CORRECTION MAJEURE ---
+            // 1. On supprime la navigation manuelle qui cause l'erreur
+            // if (navigation && typeof navigation.navigate === 'function') {
+            //     navigation.navigate('Home'); // ❌ SUPPRIMÉ
+            // }
 
+            // 2. On appelle la fonction "login" du contexte
+            // C'est CELA qui va déclencher le switch automatique dans App.js
+            await login(token);
+
+            // 3. (Optionnel) L'alerte de succès peut rester si vous le souhaitez
+            Alert.alert(`Connexion réussie!`, `Bienvenue, ${user.nom || 'utilisateur'}.`);
+            // -------------------------
 
         } catch (error) {
-            // NE TOUCHEZ PAS AU CATCH
-            // C'est parfait de garder l'alerte d'erreur ici.
+            console.error("Erreur de connexion:", error);
             if (error.response) {
                 Alert.alert('Erreur', error.response.data.message);
             } else {
                 Alert.alert('Erreur', 'Impossible de se connecter au serveur.');
-                console.error(error);
             }
         }
     }
@@ -81,10 +87,9 @@ const LoginScreen = ({ navigation }) => {
 
                 <View style={styles.topPattern} />
 
-                {/* <-- CHANGEMENT 2 : View devient ScrollView */}
                 <ScrollView
-                    style={styles.container} // Le style est conservé
-                    contentContainerStyle={styles.scrollContent} // On ajoute ce style
+                    style={styles.container}
+                    contentContainerStyle={styles.scrollContent}
                 >
                     <TouchableOpacity
                         style={styles.backButton}
@@ -93,23 +98,23 @@ const LoginScreen = ({ navigation }) => {
                         <Ionicons name="arrow-back" size={24} color="#000" />
                     </TouchableOpacity>
 
-                    {/* Votre formulaire est ici. Il est PARFAIT. */}
+                    {/* Le reste de votre formulaire (qui est parfait) reste inchangé */}
                     <View style={styles.formContainer}>
-                    <Text style={styles.title}>Log in</Text>
-                    <Text style={styles.subtitle}>Log in with one of the following</Text>
+                        <Text style={styles.title}>Log in</Text>
+                        <Text style={styles.subtitle}>Log in with one of the following</Text>
 
-                    <View style={styles.socialButtonContainer}>
-                        <TouchableOpacity style={styles.socialButton}>
-                            <AntDesign name="google" size={20} color="#DB4437" />
-                            <Text style={styles.socialButtonText}>With Google</Text>
-                        </TouchableOpacity>
-                        <TouchableOpacity style={styles.socialButton}>
-                            <AntDesign name="apple" size={20} color="#000" />
-                            <Text style={styles.socialButtonText}>With Apple</Text>
-                        </TouchableOpacity>
-                    </View>
+                        <View style={styles.socialButtonContainer}>
+                            <TouchableOpacity style={styles.socialButton}>
+                                <AntDesign name="google" size={20} color="#DB4437" />
+                                <Text style={styles.socialButtonText}>With Google</Text>
+                            </TouchableOpacity>
+                            <TouchableOpacity style={styles.socialButton}>
+                                <AntDesign name="apple" size={20} color="#000" />
+                                <Text style={styles.socialButtonText}>With Apple</Text>
+                            </TouchableOpacity>
+                        </View>
 
-                    <Text style={styles.label}>Email*</Text>
+                        <Text style={styles.label}>Email*</Text>
                         <View style={[styles.inputContainer, email ? styles.inputValid : null]}>
                             <TextInput
                                 style={styles.input}
@@ -120,69 +125,66 @@ const LoginScreen = ({ navigation }) => {
                                 autoCapitalize="none"
                             />
 
-                            {/* --- LOGIQUE D'ICÔNE CORRIGÉE --- */}
                             {email ? (
-                                // SI email n'est pas vide: Montre la coche
                                 <Ionicons
                                     name="checkmark-circle"
                                     size={22}
                                     color={VALID_COLOR}
                                 />
                             ) : (
-                                // SINON (s'il est vide): Montre l'enveloppe
                                 <Ionicons
-                                    name="mail-outline" // <-- L'icône par défaut
+                                    name="mail-outline"
                                     size={22}
-                                    color={TEXT_GRAY_COLOR} // <-- Couleur grise
+                                    color={TEXT_GRAY_COLOR}
                                 />
                             )}
                         </View>
 
-                    <Text style={styles.label}>Password*</Text>
-                    <View style={styles.inputContainer}>
-                        <TextInput
-                            style={styles.input}
-                            placeholder="Password"
-                            value={password}
-                            onChangeText={setPassword}
-                            secureTextEntry={!isPasswordVisible}
-                        />
-                        <TouchableOpacity onPress={() => setIsPasswordVisible(!isPasswordVisible)}>
-                            <Ionicons
-                                name={isPasswordVisible ? 'eye-off-outline' : 'eye-outline'}
-                                size={22}
-                                color={TEXT_GRAY_COLOR}
+                        <Text style={styles.label}>Password*</Text>
+                        <View style={styles.inputContainer}>
+                            <TextInput
+                                style={styles.input}
+                                placeholder="Password"
+                                value={password}
+                                onChangeText={setPassword}
+                                secureTextEntry={!isPasswordVisible}
                             />
-                        </TouchableOpacity>
-                    </View>
+                            <TouchableOpacity onPress={() => setIsPasswordVisible(!isPasswordVisible)}>
+                                <Ionicons
+                                    name={isPasswordVisible ? 'eye-off-outline' : 'eye-outline'}
+                                    size={22}
+                                    color={TEXT_GRAY_COLOR}
+                                />
+                            </TouchableOpacity>
+                        </View>
 
-                    <View style={styles.optionsRow}>
+                        <View style={styles.optionsRow}>
+                            <TouchableOpacity
+                                style={styles.checkboxContainer}
+                                onPress={() => setRememberMe(!rememberMe)}>
+                                <Ionicons
+                                    name={rememberMe ? 'checkbox' : 'checkbox-outline'}
+                                    size={22}
+                                    color={rememberMe ? PRIMARY_COLOR : TEXT_GRAY_COLOR}
+                                />
+                                <Text style={styles.checkboxText}>Remember info</Text>
+                            </TouchableOpacity>
+                            <TouchableOpacity>
+                                <Text style={styles.forgotPassword}>Forgot Password</Text>
+                            </TouchableOpacity>
+                        </View>
+
+                        <TouchableOpacity style={styles.button} onPress={handleLogin}>
+                            <Text style={styles.buttonText}>Log In</Text>
+                        </TouchableOpacity>
+
                         <TouchableOpacity
-                            style={styles.checkboxContainer}
-                            onPress={() => setRememberMe(!rememberMe)}>
-                            <Ionicons
-                                name={rememberMe ? 'checkbox' : 'checkbox-outline'}
-                                size={22}
-                                color={rememberMe ? PRIMARY_COLOR : TEXT_GRAY_COLOR}
-                            />
-                            <Text style={styles.checkboxText}>Remember info</Text>
+                            style={styles.linkTextContainer}
+                            onPress={() => navigation.navigate('SignUp')}>
+                            <Text style={styles.linkText}>
+                                First time here? <Text style={styles.linkTextBold}>Sign up for free</Text>
+                            </Text>
                         </TouchableOpacity>
-                        <TouchableOpacity>
-                            <Text style={styles.forgotPassword}>Forgot Password</Text>
-                        </TouchableOpacity>
-                    </View>
-
-                    <TouchableOpacity style={styles.button} onPress={handleLogin}>
-                        <Text style={styles.buttonText}>Log In</Text>
-                    </TouchableOpacity>
-
-                    <TouchableOpacity
-                        style={styles.linkTextContainer}
-                        onPress={() => navigation.navigate('SignUp')}>
-                        <Text style={styles.linkText}>
-                            First time here? <Text style={styles.linkTextBold}>Sign up for free</Text>
-                        </Text>
-                    </TouchableOpacity>
                     </View>
                 </ScrollView>
 
@@ -191,14 +193,15 @@ const LoginScreen = ({ navigation }) => {
         </KeyboardAvoidingView>
     )};
 
+// ... (Tous vos styles restent les mêmes)
 const styles = StyleSheet.create({
 
-    kavContainer: { // <-- NOUVEAU STYLE (pour KeyboardAvoidingView)
+    kavContainer: {
         flex: 1,
     },
 
-    scrollContent: { // <-- NOUVEAU STYLE (pour le contenu du ScrollView)
-        flexGrow: 1, // Permet au contenu de s'étendre
+    scrollContent: {
+        flexGrow: 1,
     },
 
     safeArea: {
@@ -217,10 +220,10 @@ const styles = StyleSheet.create({
     },
     backButton: {
         marginBottom: 16,
-        marginTop: 16, // Ajustez si la barre de statut est incluse
+        marginTop: 16,
         alignSelf: 'flex-start',
-        padding: 8, // Zone de clic plus grande
-        marginLeft: 8, // Aligner avec le padding du formulaire
+        padding: 8,
+        marginLeft: 8,
     },
     title: {
         fontSize: 28,
@@ -247,7 +250,7 @@ const styles = StyleSheet.create({
         borderRadius: 10,
         borderWidth: 1,
         borderColor: BORDER_COLOR,
-        marginHorizontal: 5, // Espace entre les boutons
+        marginHorizontal: 5,
     },
     socialButtonText: {
         marginLeft: 10,
@@ -320,14 +323,11 @@ const styles = StyleSheet.create({
         color: PRIMARY_COLOR,
         fontWeight: 'bold',
     },
-    // Espaces réservés pour les motifs décoratifs
     topPattern: {
-        height: 60, // Hauteur du motif du haut
-        // Style pour l'image ou le SVG du motif
+        height: 60,
     },
     bottomPattern: {
-        height: 60, // Hauteur du motif du bas
-        // Style pour l'image ou le SVG du motif
+        height: 60,
     },
 });
 
