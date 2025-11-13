@@ -1,4 +1,5 @@
 import React, {useContext, useState} from 'react';
+
 import {
     View,
     Text,
@@ -37,10 +38,14 @@ const LoginScreen = ({ navigation }) => {
 
     const handleLogin = async () => {
 
-        if (!email || !password) {
+        console.log("CONTENU EMAIL:", `"${email}"`);
+        console.log("CONTENU PASSWORD:", `"${password}"`);
+        if (email ==="" ||password ==="") {
             Alert.alert("Erreur", "Veuillez remplir tous les champs");
+            console.log("erreur: champs vides");
             return;
         }
+
 
         // L'URL est correcte (assurez-vous que EXPO_PUBLIC_API_URL est défini)
         const backendUrl = `${process.env.EXPO_PUBLIC_API_URL}/auth/login`;
@@ -53,14 +58,6 @@ const LoginScreen = ({ navigation }) => {
 
             const { token, user } = response.data;
 
-            // --- CORRECTION MAJEURE ---
-            // 1. On supprime la navigation manuelle qui cause l'erreur
-            // if (navigation && typeof navigation.navigate === 'function') {
-            //     navigation.navigate('Home'); // ❌ SUPPRIMÉ
-            // }
-
-            // 2. On appelle la fonction "login" du contexte
-            // C'est CELA qui va déclencher le switch automatique dans App.js
             await login(token);
 
             // 3. (Optionnel) L'alerte de succès peut rester si vous le souhaitez

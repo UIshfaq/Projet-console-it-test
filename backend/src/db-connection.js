@@ -1,16 +1,11 @@
-const mysql = require('mysql2/promise');
 
-// 1. Connexion MySQL (avec un Pool)
-const pool = mysql.createPool({
-    host: process.env.DB_HOST,
-    port: process.env.DB_PORT,
-    user: process.env.DB_USER,
-    password: process.env.DB_PASSWORD,
-    database: process.env.DB_NAME,
-    waitForConnections: true,
-    connectionLimit: 10,
-    queueLimit: 0
-});
 
-// 2. Exporter le pool pour que les autres fichiers l'utilisent
-module.exports = pool;
+const knex = require('knex');
+// On charge le knexfile.js qui est à la racine de /backend
+const config = require('../knexfile.js');
+
+// On initialise Knex avec la configuration 'development'
+const db = knex(config.development);
+
+// On exporte l'instance Knex pour toute l'app
+module.exports = db;

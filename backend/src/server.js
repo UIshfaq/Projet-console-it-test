@@ -2,7 +2,7 @@ const express = require('express');
 const cors = require('cors')
 const app = express();
 const verifyToken = require('./middlewares/authMiddleware');
-const pool = require('./db-connection'); // Assurez-vous que ce chemin est correct
+const db = require('./db-connection'); // Assurez-vous que ce chemin est correct
 
 app.use(cors());
 
@@ -21,8 +21,8 @@ const PORT = process.env.PORT || 3000;
 app.listen(PORT, async () => {
     // Tester la connexion au démarrage
     try {
-        await pool.query('SELECT 1');
-        console.log('Connecté à MySQL !');
+        await db.raw('SELECT 1'); // <-- 2. On teste avec la syntaxe Knex
+        console.log('Connecté à MySQL avec Knex !');
         console.log(`Serveur lancé sur le port ${PORT}`);
     } catch (err) {
         console.error('Erreur de connexion à la DB au démarrage', err);

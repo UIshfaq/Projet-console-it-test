@@ -6,7 +6,7 @@ const router = express.Router();
 // 2. Importer tous les outils
 const bcrypt = require('bcryptjs');
 const jwt = require("jsonwebtoken");
-const pool = require('../db-connection'); // Notre connexion BDD
+const db = require('../db-connection'); // Notre connexion BDD
 
 router.post('/register', async (req, res) => {
     try {
@@ -16,21 +16,23 @@ router.post('/register', async (req, res) => {
             return res.status(400).json({ message: 'Veuillez remplir tous les champs.' });
         }
 
-        const [existingUser] = await pool.query(
-            'SELECT email FROM users WHERE email = ?', [email]
-        );
+        const existingUser = await db('users').where({ email: email }).first();
 
-        if (existingUser.length > 0) {
+        if (existingUser) {
             return res.status(409).json({ message: 'Cet email est déjà utilisé.' });
         }
+
+
 
         const salt = await bcrypt.genSalt(10);
         const passwordHash = await bcrypt.hash(password, salt);
 
-        await pool.query(
-            'INSERT INTO users (nom, email, password_hash, role) VALUES (?, ?, ?, ?)',
-            [nom, email, passwordHash, 'technicien']
-        );
+        await db('users').insert({
+            nom: nom,
+            email: email,
+            password_hash: passwordHash,
+            role: 'technicien'
+        });
 
         res.status(201).json({ message: 'Utilisateur créé avec succès !' });
 
@@ -48,17 +50,17 @@ router.post('/login', async (req, res) => {
             return res.status(400).json({ message: "Veuillez remplir tous les champs" });
         }
 
-        const [users] = await pool.query(
-            // C'EST CORRECT : On sélectionne explicitement password_hash
-            'SELECT id, nom, email, role, password_hash FROM users WHERE email = ?',
-            [email]
-        );
+        const user = await db('users')
+            .where({ email: email })
+            .select('id', 'nom', 'email', 'role', 'password_hash')
+            .first();
 
-        if (users.length === 0) {
+
+        if (!user) {
             return res.status(401).json({ message: "Email ou mot de passe incorrect." });
         }
 
-        const user = users[0];
+        // La comparaison de mot de passe ne change pas
         const isMatch = await bcrypt.compare(password, user.password_hash);
 
         if (isMatch === false) {
