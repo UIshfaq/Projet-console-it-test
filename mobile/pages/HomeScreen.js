@@ -13,7 +13,7 @@ function HomeScreen({ navigation }) {
             {/* Le sous-titre doit confirmer la connexion, pas demander de se connecter */}
             <Text style={styles.subtitle}>Vous êtes connecté et pouvez commencer le travail.</Text>
 
-            {/* CORRECTION : Remplacer "Se connecter" par "Se déconnecter" */}
+
             <TouchableOpacity
                 style={styles.buttonContainer}
                 onPress={logout} // <-- APPELLE LA FONCTION LOGOUT

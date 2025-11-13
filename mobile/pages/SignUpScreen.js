@@ -59,8 +59,6 @@ const SignUpScreen = ({ navigation }) => {
             return;
         }
 
-        // Simuler la variable d'environnement (si elle n'est pas définie dans l'émulateur)
-        // ATTENTION : Changez cette ligne si votre variable d'env est l'unique source
         const backendUrl = `${process.env.EXPO_PUBLIC_API_URL || 'http://192.168.1.52:3000'}/auth/register`;
 
 
