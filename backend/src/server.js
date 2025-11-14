@@ -1,3 +1,4 @@
+
 const express = require('express');
 const cors = require('cors')
 const app = express();
@@ -9,9 +10,13 @@ app.use(cors());
 // 2. Middleware pour lire et parser le corps des requêtes en JSON
 app.use(express.json());
 
+
 // --- Importer et "brancher" les routes ---
 const authRoutes = require('./routes/authRoutes');
 app.use('/auth', authRoutes); // Préfixe: /auth/register, /auth/login, etc.
+
+const interventionRoutes = require('./routes/interventionRoutes');
+app.use('/api/interventions', interventionRoutes);
 
 
 

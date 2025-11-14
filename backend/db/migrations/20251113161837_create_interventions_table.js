@@ -5,8 +5,12 @@ exports.up = function(knex) {
         table.string('titre').notNullable();
         table.string('adresse').notNullable();
         table.date('date').notNullable();
-        table.string('status').notNullable().defaultTo('prévu');
-        table.integer('technicien_id')
+        table.enum('statut', [
+            'prévu',
+            'en_cours',
+            'termine',
+            'annule'
+        ]).notNullable().defaultTo('prévu');        table.integer('technicien_id')
             .unsigned()
             .notNullable()
             .references('id')
