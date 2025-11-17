@@ -53,7 +53,7 @@ function InterventionScreen({ navigation }) {
             style={styles.row}
             onPress={() => {
                 // On navigue vers la page de détails avec les infos de CETTE ligne
-                navigation.navigate('', { intervention: item });
+                navigation.navigate('Detail', { intervention: item });
             }}
         >
             {/* Colonne DATE */}

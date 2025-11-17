@@ -33,21 +33,30 @@ exports.seed = async function(knex) {
             adresse: 'Paris',
             date: '2025-11-15',
             statut: 'en_cours',
-            technicien_id: 1 // Lié à l'ID 1
+            technicien_id: 1,
+            description: 'Vérification du système électrique.',
+            latitude: 48.8566,
+            longitude: 2.3522,
         },
         {
             titre: 'Intervention 2',
             adresse: 'Lyon',
             date: '2025-11-16',
             statut: 'termine',
-            technicien_id: 2 // Lié à l'ID 2
+            technicien_id: 2,
+            description: 'Remplacement des pièces défectueuses.',
+            latitude: 45.7640,
+            longitude: 4.8357,
         },
         {
             titre: 'Intervention 3',
             adresse: 'Marseille',
             date: '2025-11-17',
             statut: 'prévu',
-            technicien_id: 1 // Lié à l'ID 1
+            technicien_id: 1,
+            description: 'Inspection générale du site.',
+            latitude: 43.2965,
+            longitude: 5.3698,
         }
     ]);
 };

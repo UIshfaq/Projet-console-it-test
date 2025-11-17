@@ -9,6 +9,7 @@ import LoginScreen from "./pages/authentification/LoginScreen";
 import SignUpScreen from "./pages/authentification/SignUpScreen";
 import HomeScreen from "./pages/HomeScreen";
 import InterventionScreen from "./pages/interventions/PlaningScreen";
+import DetailsScreen from "./pages/interventions/detailsScreen";
 // =====================================
 
 import LoadingScreen from "./pages/authentification/LoadScreen"; // Vous l'aviez déjà, c'est bien
@@ -29,6 +30,7 @@ const AppNavigator = () => (
     <Stack.Navigator>
         <Stack.Screen name="Home" component={HomeScreen} />
         <Stack.Screen name="Intervention" component={InterventionScreen} />
+        <Stack.Screen name={"Detail"} component={DetailsScreen}/>
     </Stack.Navigator>
 );
 // =================================
