@@ -2,6 +2,7 @@ import { StyleSheet, Text, View, TouchableOpacity } from "react-native";
 import { useContext } from "react";
 import { AuthContext } from "../contextes/AuthContexte";
 
+
 function HomeScreen({ navigation }) {
 
     // On récupère la fonction "logout" du contexte (c'est parfait)
@@ -19,6 +20,12 @@ function HomeScreen({ navigation }) {
                 onPress={logout} // <-- APPELLE LA FONCTION LOGOUT
             >
                 <Text style={styles.buttonText}>Se déconnecter</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+                style={styles.buttonContainer}
+                onPress={() => navigation.navigate("Intervention")}
+            >
+                <Text style={styles.buttonText}>Mon planning</Text>
             </TouchableOpacity>
         </View>
     );

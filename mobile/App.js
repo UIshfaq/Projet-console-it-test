@@ -1,22 +1,22 @@
 import React, { useContext } from "react";
 import { NavigationContainer } from "@react-navigation/native";
 import { createStackNavigator } from "@react-navigation/stack";
-import { AuthProvider, AuthContext } from './contextes/AuthContexte'; // Vous avez mis 'contextes', c'est parfait
+import { AuthProvider, AuthContext } from './contextes/AuthContexte';
 
-// === ÉTAPE 1 : AJOUTEZ CES IMPORTS ===
-// (Ils manquaient)
-import LoginScreen from "./pages/LoginScreen";
-import SignUpScreen from "./pages/SignUpScreen";
+
+
+import LoginScreen from "./pages/authentification/LoginScreen";
+import SignUpScreen from "./pages/authentification/SignUpScreen";
 import HomeScreen from "./pages/HomeScreen";
+import InterventionScreen from "./pages/interventions/PlaningScreen";
 // =====================================
 
-import LoadingScreen from "./pages/loadScreen"; // Vous l'aviez déjà, c'est bien
+import LoadingScreen from "./pages/authentification/LoadScreen"; // Vous l'aviez déjà, c'est bien
 
 const Stack = createStackNavigator();
 
-// === ÉTAPE 2 : AJOUTEZ CE CODE ===
+
 // Le "monde" déconnecté
-// Le "monde" déconnecté (Version Propre)
 const AuthNavigator = () => (
     <Stack.Navigator screenOptions={{ headerShown: false }}>
         <Stack.Screen name="Login" component={LoginScreen} />
@@ -24,10 +24,11 @@ const AuthNavigator = () => (
     </Stack.Navigator>
 );
 
-// Le "monde" connecté (Version Propre)
+// Le "monde" connecté
 const AppNavigator = () => (
     <Stack.Navigator>
         <Stack.Screen name="Home" component={HomeScreen} />
+        <Stack.Screen name="Intervention" component={InterventionScreen} />
     </Stack.Navigator>
 );
 // =================================

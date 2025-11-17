@@ -16,10 +16,9 @@ import {
 import { Ionicons, AntDesign } from '@expo/vector-icons';
 import axios from 'axios'
 
-import {AuthContext} from "../contextes/AuthContexte";
+import {AuthContext} from "../../contextes/AuthContexte";
 
 
-// ... (Toutes vos couleurs et constantes restent les mêmes)
 const PRIMARY_COLOR = '#6A5AE0';
 const SCREEN_BG_COLOR = '#F7F8F9';
 const FORM_CONTAINER_BG_COLOR = '#FFFFFF';
@@ -33,13 +32,13 @@ const LoginScreen = ({ navigation }) => {
     const [rememberMe, setRememberMe] = useState(false);
     const [isPasswordVisible, setIsPasswordVisible] = useState(false);
 
-    // Vous le récupérez déjà ici, c'est parfait
+
     const { login } = useContext(AuthContext);
 
     const handleLogin = async () => {
 
-        console.log("CONTENU EMAIL:", `"${email}"`);
-        console.log("CONTENU PASSWORD:", `"${password}"`);
+        // console.log("CONTENU EMAIL:", `"${email}"`);
+        // console.log("CONTENU PASSWORD:", `"${password}"`);
         if (email ==="" ||password ==="") {
             Alert.alert("Erreur", "Veuillez remplir tous les champs");
             console.log("erreur: champs vides");
@@ -47,7 +46,7 @@ const LoginScreen = ({ navigation }) => {
         }
 
 
-        // L'URL est correcte (assurez-vous que EXPO_PUBLIC_API_URL est défini)
+
         const backendUrl = `${process.env.EXPO_PUBLIC_API_URL}/auth/login`;
 
         try {
@@ -60,9 +59,9 @@ const LoginScreen = ({ navigation }) => {
 
             await login(token);
 
-            // 3. (Optionnel) L'alerte de succès peut rester si vous le souhaitez
+
             Alert.alert(`Connexion réussie!`, `Bienvenue, ${user.nom || 'utilisateur'}.`);
-            // -------------------------
+
 
         } catch (error) {
             console.error("Erreur de connexion:", error);
