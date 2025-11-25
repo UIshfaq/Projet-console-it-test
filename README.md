@@ -1,56 +1,82 @@
-# Nom du Projet
+# 📱 Application Technicien (MVP)
 
-Une brève description de votre projet.
+Application mobile destinée aux techniciens en intervention (MVP).
+Gère l'authentification, la liste des interventions, les détails et la géolocalisation.
 
-## Démarrage rapide
+**Stack Technique :**
+- **Mobile :** React Native (Expo)
+- **Backend :** Node.js (Express) + Knex.js
+- **Base de données :** MySQL (via Docker)
 
-Suivez ces instructions pour obtenir une copie du projet opérationnelle sur votre machine locale.
+---
 
-### Prérequis
+## 🛠 Prérequis
 
-Assurez-vous que les outils suivants sont installés sur votre système :
-*   Node.js
-*   npm
-*   Docker
-*   Docker Compose
+* [Node.js](https://nodejs.org/)
+* [Docker](https://www.docker.com/) & Docker Compose
+* [Expo Go](https://expo.dev/client) (sur votre mobile) ou un émulateur.
 
-### Installation
+---
 
-1.  **Installer les dépendances du Backend**
-    Placez-vous dans le répertoire `backend` et exécutez la commande :
-    ```sh
-    cd backend
-    npm install
-    ```
+## 🚀 Installation & Configuration
 
-2.  **Installer les dépendances de l'application Mobile**
-    Placez-vous dans le répertoire `mobile` et exécutez la commande :
-    ```sh
-    cd ../mobile
-    npm install
-    ```
+### 1. Installation des dépendances
 
-3.  **Configurer les variables d'environnement**
-    Vous devrez peut-être créer ou mettre à jour un fichier `.env` à la racine du projet ou dans le dossier `backend`. Remplissez-le avec les informations de configuration nécessaires. Par exemple :
-    ```env
-    # .env example
-    DB_HOST=database
-    DB_USER=user
-    DB_PASSWORD=password
+Placez-vous dans les dossiers respectifs pour installer les librairies :
 
-    ```
+```bash
+# Backend
+cd backend
+npm install
 
-### Lancement
-
-Pour démarrer l'ensemble de l'application (backend, base de données, etc.), exécutez la commande suivante à la racine de votre projet :
-
-```sh
-docker-compose up --build
+# Mobile
+cd ../mobile
+npm install
 ```
 
-ensuite , pour lancer l'application mobile, ouvrez un nouveau terminal, placez-vous dans le répertoire `mobile` et exécutez :
+### 2. Configuration de la base de données
+Créez un fichier `.env` dans le dossier `backend` et a la racine avec les variables suivantes :
 
-```sh
+```env
+PORT=3000
+DB_HOST=db
+DB_USER=user_database
+DB_PASSWORD=password123
+DB_NAME=name_database
+DB_PORT=3306
+MYSQL_ROOT_PASSWORD=rootpassword
+JWT_SECRET=votre_super_secret_jwt
+```
+
+Créez un fichier `.env` dans le dossier `mobile` avec les variables suivantes :
+
+```env
+EXPO_PUBLIC_API_URL="http://votreAdresseIP:3000"
+```
+
+### 3. Démarrage de la base de données
+```bash
+docker compose up --build
+```
+
+### 4. Initialisation de la base de données
+Dans le dossier `backend`, exécutez les migrations et les seeds :
+```bash
+cd backend
+
+# Créer les tables
+npx knex migrate:latest
+
+# Remplir avec les fausses données
+npx knex seed:run
+```
+
+### 5. Démarrage 
+Démarrez le serveur backend :
+```bash
 cd mobile
+
 npm start
+
+# tester sur web ou expo go
 ```
