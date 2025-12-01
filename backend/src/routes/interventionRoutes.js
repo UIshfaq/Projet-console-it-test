@@ -46,4 +46,25 @@ router.get('/:id', async (req, res) => {
     }
 })
 
+router.put('/:id', async (req , res) => {
+
+    const { id } = req.params;
+    const { statut, rapport } = req.body;
+
+    try {
+        await db('interventions')
+            .where({ id: id })
+            .update({
+                statut: statut,
+                rapport: rapport
+            });
+
+        res.json({ message: "Modification de l'intervention réussie" });
+
+    } catch (e) {
+        console.error("Erreur lors de l'update :", e);
+        res.status(500).json({ message: "Erreur serveur." });
+    }
+});
+
 module.exports = router;
