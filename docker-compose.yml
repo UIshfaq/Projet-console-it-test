@@ -13,14 +13,14 @@ services:
     volumes:
       - mysql_data:/var/lib/mysql
 
-    # --- MODIFICATION DU HEALTHCHECK ---
+
     # On utilise le 'root' user, qui est plus fiable pour le test
     healthcheck:
       test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "--user=root", "-p${MYSQL_ROOT_PASSWORD}"]
       interval: 10s
       timeout: 5s
       retries: 5
-    # --- FIN DE LA MODIFICATION ---
+
 
   api:
     build: ./backend

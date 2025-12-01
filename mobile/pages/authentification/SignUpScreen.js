@@ -59,7 +59,7 @@ const SignUpScreen = ({ navigation }) => {
             return;
         }
 
-        const backendUrl = `${process.env.EXPO_PUBLIC_API_URL || 'http://192.168.1.52:3000'}/auth/register`;
+        const backendUrl = `${process.env.EXPO_PUBLIC_API_URL}/auth/register`;
 
 
 

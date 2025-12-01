@@ -98,5 +98,4 @@ router.post('/login', async (req, res) => {
 });
 
 
-// 3. Exporter le routeur (NE PAS OUBLIER !)
 module.exports = router;

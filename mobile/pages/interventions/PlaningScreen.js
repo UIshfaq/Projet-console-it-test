@@ -5,26 +5,18 @@ import { AuthContext } from '../../contextes/AuthContexte';
 import { Ionicons } from '@expo/vector-icons';
 
 function InterventionScreen({ navigation }) {
-    // 1. Déclarer l'état
     const [interventions, setInterventions] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
-
-    // 2. Récupérer le token du contexte
     const { userToken } = useContext(AuthContext);
 
     const afficherInterventions = async () => {
-        const backendUrl = `${process.env.EXPO_PUBLIC_API_URL}/api/interventions/`;
 
-        if (!userToken) {
-            console.log("Attente du token...");
-            return;
-        }
+        const backendUrl = `${process.env.EXPO_PUBLIC_API_URL}/api/interventions/`;
+        if (!userToken) return;
 
         try {
             const response = await axios.get(backendUrl, {
-                headers: {
-                    Authorization: `Bearer ${userToken}`
-                }
+                headers: { Authorization: `Bearer ${userToken}` }
             });
             setInterventions(response.data);
             setIsLoading(false);
@@ -34,103 +26,190 @@ function InterventionScreen({ navigation }) {
         }
     }
 
-    // Fonction utilitaire pour la date
-    const formatDate = (dateString) => {
-        if (!dateString) return "--/--";
-        const date = new Date(dateString);
-        return date.toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' });
-    };
-
-    // 3. useEffect
     useEffect(() => {
         afficherInterventions();
     }, [userToken]);
 
-    // 4. Le design d'une ligne (C'EST ICI QUE CA CHANGE)
-    const renderItem = ({ item }) => (
-        // On remplace la View par TouchableOpacity ici !
-        <TouchableOpacity
-            style={styles.row}
-            onPress={() => {
-                // On navigue vers la page de détails avec les infos de CETTE ligne
-                navigation.navigate('Detail', { intervention: item });
-            }}
-        >
-            {/* Colonne DATE */}
-            <Text style={styles.cellDate}>
-                {formatDate(item.date || item.date_debut)}
-            </Text>
+    // --- FONCTIONS DE FORMATAGE VISUEL ---
 
-            {/* Colonne INFO */}
-            <View style={styles.cellMain}>
-                <Text style={styles.clientName}>{item.titre || "Intervention"}</Text>
-                <Text style={styles.interventionType} numberOfLines={1}>
-                    {item.adresse || "Pas d'adresse"}
-                </Text>
-            </View>
+    // Sépare le jour et le mois pour le design "Calendrier"
+    const getDateParts = (dateString) => {
+        if (!dateString) return { day: '--', month: '--' };
+        const date = new Date(dateString);
+        const day = date.toLocaleDateString('fr-FR', { day: '2-digit' });
+        const month = date.toLocaleDateString('fr-FR', { month: 'short' });
+        return { day, month: month.replace('.', '') }; // Enlève le point du mois (janv.)
+    };
 
-            {/* Colonne STATUT */}
-            <Text style={[
-                styles.cellStatus,
-                {
-                    color:
-                        item.statut === 'en_cours' ? 'orange' :
-                            (item.statut === 'prevu' || item.statut === 'prévu') ? 'blue' :
-                                (item.statut === 'termine' || item.statut === 'terminé') ? 'red' : 'gray'
-                }
-            ]}>
-                {item.statut}
-            </Text>
+    // Gère les couleurs du badge de statut
+    const getStatusStyle = (status) => {
+        switch (status) {
+            case 'en_cours': return { bg: '#FFF4E5', text: '#FF9800', label: 'En Cours' };
+            case 'termine':
+            case 'terminé': return { bg: '#E8F5E9', text: '#4CAF50', label: 'Terminé' };
+            case 'prevu':
+            case 'prévu': return { bg: '#E3F2FD', text: '#2196F3', label: 'Prévu' };
+            default: return { bg: '#F5F5F5', text: '#9E9E9E', label: status };
+        }
+    };
 
-            <Ionicons name="chevron-forward" size={20} color="#ccc" />
-        </TouchableOpacity>
-    );
+    // --- RENDU D'UNE CARTE (ITEM) ---
+    const renderItem = ({ item }) => {
+        const { day, month } = getDateParts(item.date || item.date_debut);
+        const statusStyle = getStatusStyle(item.statut);
 
-    // 5. Écran de chargement
+        return (
+            <TouchableOpacity
+                style={styles.card}
+                activeOpacity={0.7} // Effet visuel au clic
+                onPress={() => navigation.navigate('Detail', { intervention: item })}
+            >
+                {/* BLOC DATE (Gauche) */}
+                <View style={styles.dateBox}>
+                    <Text style={styles.dateDay}>{day}</Text>
+                    <Text style={styles.dateMonth}>{month}</Text>
+                </View>
+
+                {/* BLOC INFO (Centre) */}
+                <View style={styles.contentBox}>
+                    {/* Titre et Statut (Ligne du haut) */}
+                    <View style={styles.topRow}>
+                        <Text style={styles.title} numberOfLines={1}>
+                            {item.titre || "Intervention"}
+                        </Text>
+                        <View style={[styles.statusBadge, { backgroundColor: statusStyle.bg }]}>
+                            <Text style={[styles.statusText, { color: statusStyle.text }]}>
+                                {statusStyle.label}
+                            </Text>
+                        </View>
+                    </View>
+
+                    {/* Client */}
+                    <View style={styles.infoRow}>
+                        <Ionicons name="person-outline" size={14} color="#666" style={{ marginRight: 5 }} />
+                        <Text style={styles.subText} numberOfLines={1}>
+                            {item.nomClient || item.client || "Client non spécifié"}
+                        </Text>
+                    </View>
+
+                    {/* Adresse */}
+                    <View style={styles.infoRow}>
+                        <Ionicons name="location-outline" size={14} color="#666" style={{ marginRight: 5 }} />
+                        <Text style={styles.subText} numberOfLines={1}>
+                            {item.adresse || "Pas d'adresse"}
+                        </Text>
+                    </View>
+                </View>
+
+                {/* FLÈCHE (Droite) */}
+                <View style={styles.arrowBox}>
+                    <Ionicons name="chevron-forward" size={20} color="#CCC" />
+                </View>
+            </TouchableOpacity>
+        );
+    };
+
     if (isLoading) {
         return (
-            <View style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
-                <ActivityIndicator size="large" color="#0000ff" />
-                <Text style={{marginTop: 10}}>Chargement du planning...</Text>
+            <View style={[styles.container, styles.center]}>
+                <ActivityIndicator size="large" color="#007AFF" />
             </View>
         );
     }
 
-    // 6. L'AFFICHAGE PRINCIPAL (Remis au propre)
     return (
         <SafeAreaView style={styles.container}>
-            {/* En-tête du tableau */}
-            <View style={styles.header}>
-                <Text style={styles.headerText}>Date</Text>
-                <Text style={styles.headerText}>Intervention</Text>
-                <Text style={styles.headerText}>État</Text>
-            </View>
+            {/* Titre de la page (Optionnel, ça fait plus "App") */}
+            <Text style={styles.pageTitle}>Mes Interventions</Text>
 
-            {/* La Liste */}
             <FlatList
                 data={interventions}
                 renderItem={renderItem}
                 keyExtractor={(item) => item.id ? item.id.toString() : Math.random().toString()}
-                ListEmptyComponent={<Text style={{padding: 20, textAlign:'center'}}>Aucune intervention prévue.</Text>}
+                contentContainerStyle={{ paddingBottom: 20 }} // Espace en bas pour scroller
+                ListEmptyComponent={
+                    <View style={styles.center}>
+                        <Text style={{ color: '#888', marginTop: 50 }}>Aucune intervention prévue.</Text>
+                    </View>
+                }
             />
         </SafeAreaView>
     );
 }
 
-// --- LES STYLES ---
 const styles = StyleSheet.create({
-    container: { flex: 1, backgroundColor: '#f5f5f5' },
-    header: { flexDirection: 'row', backgroundColor: '#ddd', paddingVertical: 10, paddingHorizontal: 15 },
-    headerText: { fontWeight: 'bold', fontSize: 14, color: '#444', marginRight: 15 }, // Petit ajustement pour espacer
+    container: { flex: 1, backgroundColor: '#F8F9FA', paddingHorizontal: 16 }, // Fond gris très clair
+    center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
 
-    row: { flexDirection: 'row', backgroundColor: 'white', padding: 15, borderBottomWidth: 1, borderColor: '#eee', alignItems: 'center' },
+    pageTitle: {
+        fontSize: 24,
+        fontWeight: 'bold',
+        color: '#1A1A1A',
+        marginVertical: 20,
+        marginLeft: 5
+    },
 
-    cellDate: { width: 50, fontWeight: 'bold', fontSize: 14, color: '#333' },
-    cellMain: { flex: 1, paddingHorizontal: 10 },
-    cellStatus: { width: 70, fontSize: 12, textAlign: 'right', fontWeight: '600' },
+    // --- STYLE DE LA CARTE ---
+    card: {
+        flexDirection: 'row',
+        backgroundColor: 'white',
+        borderRadius: 16,
+        marginBottom: 12,
+        padding: 12,
+        alignItems: 'center',
+        // Ombre douce (Shadow iOS + Android)
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.05,
+        shadowRadius: 8,
+        elevation: 3,
+    },
 
-    clientName: { fontSize: 16, fontWeight: '600', color: '#000' },
-    interventionType: { fontSize: 13, color: 'gray', marginTop: 2 },
+    // Bloc Date
+    dateBox: {
+        backgroundColor: '#F0F2F5',
+        borderRadius: 12,
+        paddingVertical: 8,
+        paddingHorizontal: 12,
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginRight: 12,
+        minWidth: 55
+    },
+    dateDay: { fontSize: 18, fontWeight: 'bold', color: '#333' },
+    dateMonth: { fontSize: 12, color: '#666', textTransform: 'uppercase' },
+
+    // Bloc Contenu
+    contentBox: { flex: 1 },
+
+    topRow: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginBottom: 6
+    },
+    title: {
+        fontSize: 16,
+        fontWeight: 'bold',
+        color: '#1A1A1A',
+        flex: 1, // Pour que le titre ne passe pas sur le badge
+        marginRight: 8
+    },
+
+    // Badges (Statut)
+    statusBadge: {
+        paddingHorizontal: 8,
+        paddingVertical: 4,
+        borderRadius: 20,
+    },
+    statusText: { fontSize: 10, fontWeight: 'bold', textTransform: 'uppercase' },
+
+    // Lignes d'infos (Client / Adresse)
+    infoRow: { flexDirection: 'row', alignItems: 'center', marginTop: 2 },
+    subText: { fontSize: 13, color: '#666' },
+
+    // Flèche
+    arrowBox: { marginLeft: 8 },
 });
 
 export default InterventionScreen;

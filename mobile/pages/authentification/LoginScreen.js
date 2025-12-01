@@ -114,7 +114,7 @@ const LoginScreen = ({ navigation }) => {
                         <View style={[styles.inputContainer, email ? styles.inputValid : null]}>
                             <TextInput
                                 style={styles.input}
-                                placeholder="joe.doe@gmail.com"
+                                placeholder="exmaple@gmail.com"
                                 value={email}
                                 onChangeText={setEmail}
                                 keyboardType="email-address"

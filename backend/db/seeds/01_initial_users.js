@@ -37,6 +37,7 @@ exports.seed = async function(knex) {
             description: 'Vérification du système électrique.',
             latitude: 48.8566,
             longitude: 2.3522,
+            nomClient: "Jean Jaques"
         },
         {
             titre: 'Intervention 2',
@@ -47,6 +48,7 @@ exports.seed = async function(knex) {
             description: 'Remplacement des pièces défectueuses.',
             latitude: 45.7640,
             longitude: 4.8357,
+            nomClient: "Paul Batiste"
         },
         {
             titre: 'Intervention 3',
@@ -57,6 +59,7 @@ exports.seed = async function(knex) {
             description: 'Inspection générale du site.',
             latitude: 43.2965,
             longitude: 5.3698,
+            nomClient: "Durant Edward"
         }
     ]);
 };
