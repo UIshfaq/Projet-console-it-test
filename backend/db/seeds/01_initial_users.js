@@ -1,65 +1,83 @@
-// backend/db/seeds/01_initial_users.js
 const bcrypt = require('bcryptjs');
 
 exports.seed = async function(knex) {
 
-    // 1. DÉSACTIVER LES CLÉS ÉTRANGÈRES
+    // --- 1. NETTOYAGE (On vide tout proprement) ---
     await knex.raw('SET FOREIGN_KEY_CHECKS = 0');
-
-    // 2. VIDER ET RÉINITIALISER LES TABLES
-    // On vide les 'enfants' (interventions) en premier
     await knex.raw('TRUNCATE TABLE interventions');
-    // On vide les 'parents' (users) ensuite
     await knex.raw('TRUNCATE TABLE users');
-
-    // 3. RÉACTIVER LES CLÉS ÉTRANGÈRES
     await knex.raw('SET FOREIGN_KEY_CHECKS = 1');
 
-    // 4. CRÉER LES NOUVEAUX UTILISATEURS (Ils auront les ID 1, 2, 3)
-    const passwordHash1 = await bcrypt.hash('Password123!', 10);
-    const passwordHash2 = await bcrypt.hash('Password456!', 10);
-    const passwordHash3 = await bcrypt.hash('Password789!', 10);
+
+    // --- 2. CRÉATION DES UTILISATEURS ---
+    // On crée 3 techniciens avec le même mot de passe simple
+    const passwordHash = await bcrypt.hash('Password123!', 10);
 
     await knex('users').insert([
-        { nom: 'Tech 1', email: 'tech1@example.com', password_hash: passwordHash1, role: 'technicien' }, // ID 1
-        { nom: 'Tech 2', email: 'tech2@example.com', password_hash: passwordHash2, role: 'technicien' }, // ID 2
-        { nom: 'Tech 3', email: 'tech3@example.com', password_hash: passwordHash3, role: 'technicien' }      // ID 3
+        { nom: 'Sohail Tech', email: 'tech1@example.com', password_hash: passwordHash, role: 'technicien' }, // ID 1 (C'est toi !)
+        { nom: 'Autre Tech', email: 'tech2@example.com', password_hash: passwordHash, role: 'technicien' },  // ID 2
+        { nom: 'Stagiaire', email: 'tech3@example.com', password_hash: passwordHash, role: 'technicien' }    // ID 3
     ]);
 
-    // 5. CRÉER LES NOUVELLES INTERVENTIONS (MAINTENANT ÇA MARCHE)
+
+    // --- 3. UTILITAIRE DE DATES (Pour avoir des dates dynamiques) ---
+    const today = new Date();
+    const yesterday = new Date(today); yesterday.setDate(yesterday.getDate() - 1);
+    const tomorrow = new Date(today); tomorrow.setDate(tomorrow.getDate() + 1);
+    const nextWeek = new Date(today); nextWeek.setDate(nextWeek.getDate() + 7);
+
+    // Fonction pour formater en 'YYYY-MM-DD' (Format SQL standard)
+    const formatDate = (date) => date.toISOString().split('T')[0];
+
+
+    // --- 4. CRÉATION DES INTERVENTIONS (SCÉNARIOS DE TEST) ---
     await knex('interventions').insert([
+        // --- SCÉNARIO 1 : À FAIRE AUJOURD'HUI (Le test principal) ---
         {
-            titre: 'Intervention 1',
-            adresse: 'Paris',
-            date: '2025-11-15',
+            titre: 'Installation Fibre Optique - Box 8',
+            adresse: '10 Rue de la Paix, 75002 Paris',
+            date: formatDate(today), // C'est pour aujourd'hui
             statut: 'en_cours',
+            technicien_id: 1, // Pour toi (tech1)
+            description: 'Client VIP. Attention au parquet fragile. Appeler avant d\'arriver.',
+            nomClient: "Mme. Dupont",
+            rapport: null // Pas encore de rapport
+        },
+
+        // --- SCÉNARIO 2 : DÉJÀ TERMINÉ (Pour vérifier l'affichage en lecture seule) ---
+        {
+            titre: 'Dépannage Réseau - Latence',
+            adresse: '5 Avenue Anatole France, 75007 Paris',
+            date: formatDate(yesterday), // C'était hier
+            statut: 'termine', // Note bien : sans accent comme dans le code
             technicien_id: 1,
-            description: 'Vérification du système électrique.',
-            latitude: 48.8566,
-            longitude: 2.3522,
-            nomClient: "Jean Jaques"
+            description: 'Le client se plaint de lenteurs en Wi-Fi.',
+            nomClient: "Société TechStart",
+            rapport: "Remplacement du routeur effectué. Tests de débit OK (900 Mbps). Client satisfait." // Rapport déjà rempli
         },
+
+        // --- SCÉNARIO 3 : PRÉVU DEMAIN ---
         {
-            titre: 'Intervention 2',
-            adresse: 'Lyon',
-            date: '2025-11-16',
-            statut: 'termine',
-            technicien_id: 2,
-            description: 'Remplacement des pièces défectueuses.',
-            latitude: 45.7640,
-            longitude: 4.8357,
-            nomClient: "Paul Batiste"
+            titre: 'Maintenance Serveur',
+            adresse: 'La Défense, Tour First',
+            date: formatDate(tomorrow),
+            statut: 'prevu', // Sans accent
+            technicien_id: 1,
+            description: 'Maintenance annuelle contractuelle.',
+            nomClient: "La Défense Gestion",
+            rapport: null
         },
+
+        // --- SCÉNARIO 4 : POUR UN AUTRE TECH (Vérifier que tu ne vois pas ça) ---
         {
-            titre: 'Intervention 3',
+            titre: 'Intervention Secrète',
             adresse: 'Marseille',
-            date: '2025-11-17',
-            statut: 'prévu',
-            technicien_id: 1,
-            description: 'Inspection générale du site.',
-            latitude: 43.2965,
-            longitude: 5.3698,
-            nomClient: "Durant Edward"
+            date: formatDate(today),
+            statut: 'en_cours',
+            technicien_id: 2, // Pas pour toi !
+            description: 'Tu ne devrais pas voir cette ligne.',
+            nomClient: "Inconnu",
+            rapport: null
         }
     ]);
 };

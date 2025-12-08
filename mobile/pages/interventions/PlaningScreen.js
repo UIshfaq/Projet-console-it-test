@@ -1,8 +1,9 @@
-import React, { useState, useEffect, useContext } from 'react';
+import React, { useState, useEffect, useContext,useCallback } from 'react';
 import { View, Text, FlatList, StyleSheet, SafeAreaView, ActivityIndicator, TouchableOpacity } from 'react-native';
 import axios from "axios";
 import { AuthContext } from '../../contextes/AuthContexte';
 import { Ionicons } from '@expo/vector-icons';
+import { useFocusEffect } from '@react-navigation/native';
 
 function InterventionScreen({ navigation }) {
     const [interventions, setInterventions] = useState([]);
@@ -26,9 +27,13 @@ function InterventionScreen({ navigation }) {
         }
     }
 
-    useEffect(() => {
-        afficherInterventions();
-    }, [userToken]);
+    // On remplace useEffect par useFocusEffect
+    useFocusEffect(
+        useCallback(() => {
+            // Cette fonction se lance à chaque fois que l'écran devient visible
+            afficherInterventions();
+        }, [userToken]) // On garde userToken en dépendance
+    );
 
     // --- FONCTIONS DE FORMATAGE VISUEL ---
 

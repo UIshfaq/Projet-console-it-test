@@ -1,13 +1,16 @@
 import React, { useContext, useEffect, useState } from 'react';
-import { View, Text, ActivityIndicator, StyleSheet, ScrollView, SafeAreaView, TouchableOpacity, Linking, Platform } from "react-native";
+import {
+    View, Text, ActivityIndicator, StyleSheet, ScrollView, SafeAreaView, TouchableOpacity, Linking, Platform,
+    TextInput, Alert
+} from "react-native";
 import axios from "axios";
 import { AuthContext } from "../../contextes/AuthContexte";
-import { Ionicons } from '@expo/vector-icons'; // On ajoute les icônes
+import { Ionicons } from '@expo/vector-icons';
 
-function DetailScreen({ route }) {
+function DetailScreen({ route, navigation}) {
     // On récupère l'objet 'intervention' passé par la liste
     const { intervention } = route.params;
-
+    const [rapport, setRapport] = useState('');
     const [detailIntervention, setDetailIntervention] = useState(null);
     const [loading, setLoading] = useState(true);
     const { userToken } = useContext(AuthContext);
@@ -19,6 +22,11 @@ function DetailScreen({ route }) {
                 headers: { Authorization: `Bearer ${userToken}` }
             });
             setDetailIntervention(response.data);
+
+            if (response.data.rapport) {
+                setRapport(response.data.rapport);
+            }
+
             setLoading(false);
         } catch (e) {
             console.error("Erreur API :", e);
@@ -79,7 +87,39 @@ function DetailScreen({ route }) {
         );
     }
 
+
+    const terminerIntervention = async () =>{
+        if (!rapport.trim()){
+            alert("Veuller écrire votre rapport")
+            return;
+        }
+
+        const backendUrl = `${process.env.EXPO_PUBLIC_API_URL}/api/interventions/${intervention.id}`
+        try {
+            await axios.put(backendUrl, {
+                statut: 'terminé',
+                rapport: rapport
+            }, {
+                headers: {Authorization: `Bearer ${userToken}`}
+            })
+
+            setDetailIntervention({
+                ...detailIntervention,
+                statut: 'termine',
+                rapport: rapport
+            });
+
+
+            Alert.alert("Succès","L'interventions est terminé",[{ text: "Super", onPress: () => navigation.goBack() }])
+
+        }catch (e){
+            console.error(e);
+            Alert.alert("Erreur", "Impossible d'enregistrer la modification.");
+        }
+    }
+
     const statusStyle = getStatusStyle(detailIntervention.statut);
+    const estModifiable = detailIntervention.statut !== "termine";
 
     return (
         <SafeAreaView style={styles.container}>
@@ -154,6 +194,41 @@ function DetailScreen({ route }) {
                     </Text>
                 </View>
 
+                {estModifiable ? (
+                    <View style={styles.card}>
+                        <TextInput
+                            style={styles.inputRapport}
+                            placeholder="Décrivez le travail effectué (ex: Box changée, client satisfait...)"
+                            placeholderTextColor="#999"
+                            multiline={true}
+                            numberOfLines={4}
+                            value={rapport}
+                            onChangeText={setRapport}
+                        />
+                    </View>
+                ) : (
+                    <View style={styles.successCard}>
+                        <View style={styles.successHeader}>
+                            <Ionicons name="checkmark-circle" size={20} color="#2E7D32" />
+                            <Text style={styles.successTitle}>Rapport de clôture</Text>
+                        </View>
+                        <Text style={styles.successText}>
+                            {rapport || "Aucun rapport saisi."}
+                        </Text>
+                    </View>
+                )}
+
+
+                {/* --- LE BOUTON (Visible seulement si modifiable) --- */}
+                {estModifiable && (
+                    <TouchableOpacity
+                        style={styles.validateButton}
+                        onPress={terminerIntervention}
+                    >
+                        <Ionicons name="checkmark-done-circle" size={24} color="white" />
+                        <Text style={styles.validateText}>TERMINER L'INTERVENTION</Text>
+                    </TouchableOpacity>
+                )}
             </ScrollView>
         </SafeAreaView>
     )
@@ -214,7 +289,61 @@ const styles = StyleSheet.create({
         // Ombre bleue
         shadowColor: "#007AFF", shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.2, shadowRadius: 8, elevation: 4,
     },
-    gpsButtonText: { color: 'white', fontWeight: 'bold', fontSize: 16, letterSpacing: 0.5 }
+    gpsButtonText: { color: 'white', fontWeight: 'bold', fontSize: 16, letterSpacing: 0.5 },
+
+
+    inputRapport: {
+        minHeight: 100,      // Hauteur minimale pour écrire
+        textAlignVertical: 'top', // Pour commencer à écrire en haut à gauche
+        fontSize: 16,
+        color: '#333',
+    },
+    validateButton: {
+        backgroundColor: '#2ECC71', // Un beau vert
+        flexDirection: 'row',
+        justifyContent: 'center',
+        alignItems: 'center',
+        paddingVertical: 18,
+        borderRadius: 12,
+        marginBottom: 40, // De la marge en bas pour scroller
+        shadowColor: "#2ECC71", shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 5, elevation: 6,
+    },
+    validateText: {
+        color: 'white',
+        fontWeight: 'bold',
+        fontSize: 16,
+        letterSpacing: 0.5
+    },
+
+    successCard: {
+        backgroundColor: '#E8F5E9', // Vert très clair (Fond)
+        borderRadius: 12,
+        padding: 16,
+        marginBottom: 20,
+        borderWidth: 1,
+        borderColor: '#C8E6C9', // Bordure verte subtile
+    },
+    successHeader: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginBottom: 10,
+        borderBottomWidth: 1,
+        borderBottomColor: 'rgba(46, 125, 50, 0.1)', // Ligne de séparation légère
+        paddingBottom: 8
+    },
+    successTitle: {
+        color: '#2E7D32', // Vert foncé (Titre)
+        fontWeight: 'bold',
+        marginLeft: 8,
+        fontSize: 14,
+        textTransform: 'uppercase',
+        letterSpacing: 0.5
+    },
+    successText: {
+        color: '#1B5E20', // Vert très foncé (Texte)
+        fontSize: 16,
+        lineHeight: 24,
+    },
 });
 
 export default DetailScreen;
