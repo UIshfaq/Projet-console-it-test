@@ -13,7 +13,7 @@ router.get('/', async (req, res) => {
 
         const interventions = await db('interventions')
             .where({ technicien_id: technicienIdConnecte })
-            .whereNotIn('statut', ['termine', 'annule', 'archiver'])
+            .whereNotIn('statut', ['annule', 'archiver'])
             .orderBy('date', 'asc');
 
         res.status(200).json(interventions);

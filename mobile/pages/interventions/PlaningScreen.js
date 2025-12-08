@@ -67,7 +67,7 @@ function InterventionScreen({ navigation }) {
             <TouchableOpacity
                 style={styles.card}
                 activeOpacity={0.7} // Effet visuel au clic
-                onPress={() => navigation.navigate('Detail', { intervention: item })}
+                onPress={() => navigation.navigate('Detail', { interventionId: item.id })}
             >
                 {/* BLOC DATE (Gauche) */}
                 <View style={styles.dateBox}>
@@ -110,6 +110,8 @@ function InterventionScreen({ navigation }) {
                 <View style={styles.arrowBox}>
                     <Ionicons name="chevron-forward" size={20} color="#CCC" />
                 </View>
+
+
             </TouchableOpacity>
         );
     };

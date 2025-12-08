@@ -8,15 +8,14 @@ import { AuthContext } from "../../contextes/AuthContexte";
 import { Ionicons } from '@expo/vector-icons';
 
 function DetailScreen({ route, navigation}) {
-    // On récupère l'objet 'intervention' passé par la liste
-    const { intervention } = route.params;
+    const { interventionId } = route.params;
     const [rapport, setRapport] = useState('');
     const [detailIntervention, setDetailIntervention] = useState(null);
     const [loading, setLoading] = useState(true);
     const { userToken } = useContext(AuthContext);
 
     const chargerDescription = async () => {
-        const backendUrl = `${process.env.EXPO_PUBLIC_API_URL}/api/interventions/${intervention.id}`;
+        const backendUrl = `${process.env.EXPO_PUBLIC_API_URL}/api/interventions/${interventionId}`;
         try {
             const response = await axios.get(backendUrl, {
                 headers: { Authorization: `Bearer ${userToken}` }
@@ -87,6 +86,54 @@ function DetailScreen({ route, navigation}) {
         );
     }
 
+    const archiverInterv = async () => {
+        if (detailIntervention?.statut === "archiver") { // Utiliser le chaînage optionnel pour plus de sécurité
+            Alert.alert("Action impossible", "Cette intervention est déjà archivée.");
+            return;
+        }
+
+        let proceedWithArchive = false;
+
+        if (Platform.OS === 'web') {
+            proceedWithArchive = window.confirm(
+                "Êtes-vous sûr de vouloir archiver cette intervention ? Elle sera déplacée dans l'historique."
+            );
+        } else {
+            proceedWithArchive = await new Promise((resolve) => {
+                Alert.alert(
+                    "Confirmation",
+                    "Êtes-vous sûr de vouloir archiver cette intervention ? Elle sera déplacée dans l'historique.",
+                    [
+                        { text: "Annuler", style: "cancel", onPress: () => resolve(false) },
+                        { text: "Archiver", style: "destructive", onPress: () => resolve(true) }
+                    ]
+                );
+            });
+        }
+
+
+        if (!proceedWithArchive) {
+            return;
+        }
+
+
+        const backUrl = `${process.env.EXPO_PUBLIC_API_URL}/api/interventions/${interventionId}/archive`;
+
+        try {
+            await axios.patch(backUrl, {}, {
+                headers: { Authorization: `Bearer ${userToken}` }
+            });
+            setDetailIntervention({
+                ...detailIntervention,
+                statut: 'archiver'
+            });
+
+            Alert.alert("Succès", "Archivage de l'intervention réussi", [{ text: "OK", onPress: () => navigation.goBack() }]);
+        } catch (e) {
+            console.error("Erreur lors de l'archivage :", e.response?.data || e.message);
+            Alert.alert("Erreur", "Impossible d'archiver l'intervention.");
+        }
+    }
 
     const terminerIntervention = async () =>{
         if (!rapport.trim()){
@@ -94,7 +141,7 @@ function DetailScreen({ route, navigation}) {
             return;
         }
 
-        const backendUrl = `${process.env.EXPO_PUBLIC_API_URL}/api/interventions/${intervention.id}`
+        const backendUrl = `${process.env.EXPO_PUBLIC_API_URL}/api/interventions/${interventionId}`
         try {
             await axios.put(backendUrl, {
                 statut: 'terminé',
@@ -119,7 +166,10 @@ function DetailScreen({ route, navigation}) {
     }
 
     const statusStyle = getStatusStyle(detailIntervention.statut);
-    const estModifiable = detailIntervention.statut !== "termine";
+    const estModifiable = (
+        detailIntervention.statut !== "termine" && detailIntervention.statut !== "archiver"
+    );
+
 
     return (
         <SafeAreaView style={styles.container}>
@@ -229,6 +279,17 @@ function DetailScreen({ route, navigation}) {
                         <Text style={styles.validateText}>TERMINER L'INTERVENTION</Text>
                     </TouchableOpacity>
                 )}
+
+
+                { detailIntervention.statut === 'termine' && (
+                    <TouchableOpacity
+                        style={[styles.validateButton, styles.archiveButton]}
+                        onPress={archiverInterv}
+                    >
+                        <Ionicons name="archive-outline" size={24} color="white" />
+                        <Text style={styles.validateText}>ARCHIVER</Text>
+                    </TouchableOpacity>
+                )}
             </ScrollView>
         </SafeAreaView>
     )
@@ -237,7 +298,7 @@ function DetailScreen({ route, navigation}) {
 const styles = StyleSheet.create({
     container: { flex: 1, backgroundColor: '#F8F9FA' }, // Fond gris clair pro
     loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-    scrollContent: { padding: 20 },
+    scrollContent: { padding: 20 , paddingBottom: 100},
 
     // En-tête
     headerCard: {
@@ -305,7 +366,6 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         paddingVertical: 18,
         borderRadius: 12,
-        marginBottom: 40, // De la marge en bas pour scroller
         shadowColor: "#2ECC71", shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 5, elevation: 6,
     },
     validateText: {
@@ -343,6 +403,13 @@ const styles = StyleSheet.create({
         color: '#1B5E20', // Vert très foncé (Texte)
         fontSize: 16,
         lineHeight: 24,
+    },
+    archiveButton: {
+        backgroundColor: '#E67E22', // Orange pour l'historique/gestion
+        marginTop: 15, // Plus d'espace pour la séparation
+        shadowColor: "#E67E22",
+        marginBottom: 40, // De la marge en bas pour scroller
+
     },
 });
 
