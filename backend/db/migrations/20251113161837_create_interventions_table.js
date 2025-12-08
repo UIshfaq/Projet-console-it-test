@@ -10,7 +10,8 @@ exports.up = function(knex) {
             'en_cours',
             'termine',
             'annule'
-        ]).notNullable().defaultTo('prévu');        table.integer('technicien_id')
+        ]).notNullable().defaultTo('prévu');
+        table.integer('technicien_id')
             .unsigned()
             .notNullable()
             .references('id')

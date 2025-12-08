@@ -6,7 +6,6 @@ exports.up = function(knex) {
 
 exports.down = function(knex) {
     return knex.schema.alterTable('interventions', (table) => {
-
         table.dropColumn('rapport');
     });
 };

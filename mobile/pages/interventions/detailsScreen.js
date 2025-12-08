@@ -50,7 +50,7 @@ function DetailScreen({ route, navigation}) {
         // On encode l'adresse (transforme les espaces en %20, etc.)
         const query = encodeURIComponent(adresse);
 
-        // Ce lien magique fonctionne sur :
+        // Ce lien fonctionne sur :
         // 1. Le Web (Ouvre un nouvel onglet Google Maps)
         // 2. Android (Ouvre l'appli Maps)
         // 3. iOS (Ouvre l'appli Maps ou le navigateur)
