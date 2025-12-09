@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useContext,useCallback } from 'react';
+import React, {useState, useEffect, useContext, useCallback, useLayoutEffect} from 'react';
 import { View, Text, FlatList, StyleSheet, SafeAreaView, ActivityIndicator, TouchableOpacity } from 'react-native';
 import axios from "axios";
 import { AuthContext } from '../../contextes/AuthContexte';
@@ -58,6 +58,22 @@ function InterventionScreen({ navigation }) {
         }
     };
 
+    useLayoutEffect(() => {
+        navigation.setOptions({
+            // 🚨 Définition du bouton à droite du header
+            headerRight: () => (
+                <TouchableOpacity
+                    onPress={() => navigation.navigate('Archiver')}
+                    style={styles.archiveButtonHeader} // Style pour la marge
+                >
+                    {/* Vous pouvez utiliser des icônes ici, mais on utilise du texte pour l'exemple */}
+                    <Text style={styles.archiveButtonTextHeader}>Archives</Text>
+                </TouchableOpacity>
+            ),
+            // Optionnel : s'assurer que le titre est bien défini
+            headerTitle: 'Planning du Jour',
+        });
+    }, [navigation]);
     // --- RENDU D'UNE CARTE (ITEM) ---
     const renderItem = ({ item }) => {
         const { day, month } = getDateParts(item.date || item.date_debut);
@@ -126,14 +142,16 @@ function InterventionScreen({ navigation }) {
 
     return (
         <SafeAreaView style={styles.container}>
-            {/* Titre de la page (Optionnel, ça fait plus "App") */}
-            <Text style={styles.pageTitle}>Mes Interventions</Text>
+            {/* L'ancien bouton n'est plus ici, il est dans le header ! */}
+
+            {/* Si vous voulez un titre DANS la page, vous pouvez le garder, sinon vous pouvez l'enlever */}
+            {/* <Text style={styles.pageTitle}>Mes Interventions</Text> */}
 
             <FlatList
                 data={interventions}
-                renderItem={renderItem}
+                renderItem={renderItem} // Assurez-vous d'avoir votre fonction renderItem définie
                 keyExtractor={(item) => item.id ? item.id.toString() : Math.random().toString()}
-                contentContainerStyle={{ paddingBottom: 20 }} // Espace en bas pour scroller
+                contentContainerStyle={{ paddingBottom: 20 }}
                 ListEmptyComponent={
                     <View style={styles.center}>
                         <Text style={{ color: '#888', marginTop: 50 }}>Aucune intervention prévue.</Text>
@@ -217,6 +235,15 @@ const styles = StyleSheet.create({
 
     // Flèche
     arrowBox: { marginLeft: 8 },
+
+    archiveButtonHeader: {
+        marginRight: 15,
+        padding: 5,
+    },
+    archiveButtonTextHeader: {
+        color: '#007AFF', // Couleur bleue standard iOS/Android pour les liens/boutons
+        fontSize: 16,
+    },
 });
 
 export default InterventionScreen;

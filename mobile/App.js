@@ -10,6 +10,7 @@ import SignUpScreen from "./pages/authentification/SignUpScreen";
 import HomeScreen from "./pages/HomeScreen";
 import InterventionScreen from "./pages/interventions/PlaningScreen";
 import DetailsScreen from "./pages/interventions/detailsScreen";
+import ArchiverScreen from "./pages/interventions/intervArchiverScreen";
 // =====================================
 
 import LoadingScreen from "./pages/authentification/LoadScreen"; // Vous l'aviez déjà, c'est bien
@@ -31,6 +32,7 @@ const AppNavigator = () => (
         <Stack.Screen name="Home" component={HomeScreen} />
         <Stack.Screen name="Intervention" component={InterventionScreen} />
         <Stack.Screen name={"Detail"} component={DetailsScreen}/>
+        <Stack.Screen name={"Archiver"} component={ArchiverScreen}/>
     </Stack.Navigator>
 );
 // =================================
