@@ -49,11 +49,18 @@ router.get('/archived', async (req, res) => {
 router.get('/:id', async (req, res) => {
 
     const intervId = req.params.id
+    const technicienIdConnecte = req.userId
+
+    console.log(`Intervention ID (param) : ${intervId}`)
+    console.log(`Technicien ID (JWT) : ${technicienIdConnecte}`)
 
     try {
-
-        const interventionById = await db('interventions').where({id : intervId}).first()
-
+        const interventionById = await db('interventions')
+            .where({
+                id: intervId,
+                technicien_id: technicienIdConnecte
+            })
+            .first()
         if (!interventionById)
         {
             return res.status(404).json({message : "L'intervention est introuvable"})
