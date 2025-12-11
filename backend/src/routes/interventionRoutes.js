@@ -79,15 +79,21 @@ router.get('/:id', async (req, res) => {
 router.put('/:id', async (req , res) => {
 
     const { id } = req.params;
-    const { statut, rapport } = req.body;
+    const { statut, rapport, notes_technicien } = req.body;
     const technicienIdConnecte = req.userId;
+
+    if (!statut || !rapport || rapport.trim() === '') {
+        return res.status(400).json({ message: "Le rapport est obligatoire pour terminer l'intervention." });
+    }
 
     try {
         const rowsAffected = await db('interventions')
             .where({ id: id, technicien_id: technicienIdConnecte })
             .update({
                 statut: statut,
-                rapport: rapport
+                rapport: rapport,
+                notes_technicien: notes_technicien,
+                updated_at: new Date()
             });
 
         if (rowsAffected === 0) {

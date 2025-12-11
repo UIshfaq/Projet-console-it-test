@@ -55,7 +55,7 @@ exports.seed = async function(knex) {
             description: 'Le client se plaint de lenteurs en Wi-Fi.',
             nomClient: "Société TechStart",
             rapport: "Remplacement du routeur effectué. Tests de débit OK (900 Mbps). Client satisfait." ,// Rapport déjà rempli
-            notes_technicien: null
+            notes_technicien: "Routeur défectueux remplacé. Penser à vérifier les autres équipements du client lors de la prochaine visite."
         },
 
         // --- SCÉNARIO 3 : PRÉVU DEMAIN ---
