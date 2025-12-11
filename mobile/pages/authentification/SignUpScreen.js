@@ -48,7 +48,7 @@ const SignUpScreen = ({ navigation }) => {
         }
 
         if (password.length < 8 || !/\d/.test(password) || !/[a-z]/.test(password) || !/[!@#$%^&*]/.test(password)|| !/[A-Z]/.test(password)) {
-            setStatusMessage("Erreur: Le mot de passe doit contenir au moins 8 caractères.");
+            setStatusMessage("Erreur: Le mot de passe doit contenir au moins 8 caractères, dont une majuscule, une minuscule, un charactère spéciale et un chiffre.");
             Alert.alert("Erreur", "Le mot de passe doit contenir au moins 8 caractères. Il doit inclure des lettres, des chiffres, des caractères spéciaux et majuscle.");
             return;
         }
