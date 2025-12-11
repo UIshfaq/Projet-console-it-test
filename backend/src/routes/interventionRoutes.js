@@ -132,14 +132,13 @@ router.patch('/:id/modifier',async (req,res)=>{
 
     const idInterv = req.params.id
     const  idTech  = req.userId
-    const { description, rapport } = req.body;
+    const { notes_technicien, rapport } = req.body;
 
     const updates = {};
 
-    if (description !== undefined && description !== null && description.trim() !== "") {
-        updates.description = description;
+    if (notes_technicien !== undefined && notes_technicien !== null && notes_technicien.trim() !== "") {
+        updates.notes_technicien = notes_technicien;
     }
-
 
     if (rapport !== undefined && rapport !== null && rapport.trim() !== "") {
         updates.rapport = rapport;
@@ -147,7 +146,7 @@ router.patch('/:id/modifier',async (req,res)=>{
 
     try {
         if (Object.keys(updates).length === 0) {
-            return res.status(400).json({ message: "Veuillez fournir au moins la description ou le rapport avec un contenu valide." });
+            return res.status(400).json({ message: "Veuillez fournir au moins les notes ou le rapport avec un contenu valide." });
         }
         updates.updated_at = new Date();
 
@@ -157,7 +156,6 @@ router.patch('/:id/modifier',async (req,res)=>{
                 technicien_id: idTech
             })
             .update(updates);
-
 
         if (updatedRows === 0) {
             return res.status(404).json({ message: "Intervention introuvable ou non assignée à cet utilisateur." });

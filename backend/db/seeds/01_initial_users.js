@@ -41,7 +41,8 @@ exports.seed = async function(knex) {
             technicien_id: 1, // Pour toi (tech1)
             description: 'Client VIP. Attention au parquet fragile. Appeler avant d\'arriver.',
             nomClient: "Mme. Dupont",
-            rapport: null // Pas encore de rapport
+            rapport: null ,// Pas encore de rapport
+            notes_technicien: null
         },
 
         // --- SCÉNARIO 2 : DÉJÀ TERMINÉ (Pour vérifier l'affichage en lecture seule) ---
@@ -53,7 +54,8 @@ exports.seed = async function(knex) {
             technicien_id: 1,
             description: 'Le client se plaint de lenteurs en Wi-Fi.',
             nomClient: "Société TechStart",
-            rapport: "Remplacement du routeur effectué. Tests de débit OK (900 Mbps). Client satisfait." // Rapport déjà rempli
+            rapport: "Remplacement du routeur effectué. Tests de débit OK (900 Mbps). Client satisfait." ,// Rapport déjà rempli
+            notes_technicien: null
         },
 
         // --- SCÉNARIO 3 : PRÉVU DEMAIN ---
@@ -65,7 +67,8 @@ exports.seed = async function(knex) {
             technicien_id: 1,
             description: 'Maintenance annuelle contractuelle.',
             nomClient: "La Défense Gestion",
-            rapport: null
+            rapport: null,
+            notes_technicien: null
         },
 
         // --- SCÉNARIO 4 : POUR UN AUTRE TECH (Vérifier que tu ne vois pas ça) ---
@@ -77,7 +80,8 @@ exports.seed = async function(knex) {
             technicien_id: 2, // Pas pour toi !
             description: 'Tu ne devrais pas voir cette ligne.',
             nomClient: "Inconnu",
-            rapport: null
+            rapport: null,
+            notes_technicien: null
         }
     ]);
 };
