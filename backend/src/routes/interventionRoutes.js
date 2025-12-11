@@ -155,6 +155,9 @@ router.patch('/:id/modifier',async (req,res)=>{
                 id: idInterv,
                 technicien_id: idTech
             })
+            .whereNot({
+                statut: 'archiver'
+            })
             .update(updates);
 
         if (updatedRows === 0) {

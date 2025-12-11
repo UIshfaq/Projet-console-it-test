@@ -82,6 +82,18 @@ exports.seed = async function(knex) {
             nomClient: "Inconnu",
             rapport: null,
             notes_technicien: null
+        },
+
+        {
+            titre: 'Installation Caméras de Sécurité',
+            adresse: '20 Boulevard Haussmann, 75009 Paris',
+            date: formatDate(nextWeek),
+            statut: 'archiver',
+            technicien_id: 1,
+            description: 'Installation de 4 caméras extérieures et 2 intérieures.',
+            nomClient: "Entreprise SécuriTech",
+            rapport: "Installation réussie. Configuration du système de surveillance terminée.",
+            notes_technicien: "Client satisfait de l'installation."
         }
     ]);
 };
