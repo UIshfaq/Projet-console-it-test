@@ -94,7 +94,7 @@ router.put('/:id', async (req , res) => {
             return res.status(404).json({ message: "Intervention non trouvée ou non attribuée." });
         }
 
-        res.json({ message: "Modification de l'intervention réussie" });
+        res.json({ message: "Modification de l'état de intervention réussie" });
 
     } catch (e) {
         console.error("Erreur lors de l'update :", e);
@@ -128,5 +128,48 @@ router.patch('/:id/archive', async (req,res)=>{
     }
 })
 
+router.patch('/:id/modifier',async (req,res)=>{
+
+    const idInterv = req.params.id
+    const  idTech  = req.userId
+    const { description, rapport } = req.body;
+
+    const updates = {};
+
+    if (description !== undefined && description !== null && description.trim() !== "") {
+        updates.description = description;
+    }
+
+
+    if (rapport !== undefined && rapport !== null && rapport.trim() !== "") {
+        updates.rapport = rapport;
+    }
+
+    try {
+        if (Object.keys(updates).length === 0) {
+            return res.status(400).json({ message: "Veuillez fournir au moins la description ou le rapport avec un contenu valide." });
+        }
+        updates.updated_at = new Date();
+
+        const updatedRows = await db('interventions')
+            .where({
+                id: idInterv,
+                technicien_id: idTech
+            })
+            .update(updates);
+
+
+        if (updatedRows === 0) {
+            return res.status(404).json({ message: "Intervention introuvable ou non assignée à cet utilisateur." });
+        }
+
+        res.status(200).json({ message: "L'intervention a été modifiée avec succès." });
+    }
+    catch (e) {
+        console.error("Erreur lors de la modification :", e);
+        res.status(500).json({message : "Erreur serveur."})
+
+    }
+})
 
 module.exports = router;
