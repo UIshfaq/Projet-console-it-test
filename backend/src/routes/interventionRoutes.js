@@ -79,22 +79,39 @@ router.get('/:id', async (req, res) => {
 router.put('/:id', async (req , res) => {
 
     const { id } = req.params;
-    const { statut, rapport, notes_technicien } = req.body;
+    const { statut, rapport, notes_technicien, failure_reason } = req.body;
     const technicienIdConnecte = req.userId;
 
     if (!statut || !rapport || rapport.trim() === '') {
         return res.status(400).json({ message: "Le rapport est obligatoire pour terminer l'intervention." });
     }
 
+    if (statut === 'echec') {
+        if (!failure_reason || failure_reason.trim().length < 10) {
+            return res.status(400).json({
+                message: "La raison de l'échec est obligatoire et doit être détaillée (minimum 10 caractères)."
+            });
+        }
+    }
+
+    const dataToUpdate = {
+        statut: statut,
+        rapport: rapport,
+        notes_technicien: notes_technicien,
+        updated_at: new Date()
+    };
+
+    if (statut === 'echec') {
+        dataToUpdate.failure_reason = failure_reason;
+    }
+    else{
+        dataToUpdate.failure_reason = null;
+    }
+
     try {
         const rowsAffected = await db('interventions')
             .where({ id: id, technicien_id: technicienIdConnecte })
-            .update({
-                statut: statut,
-                rapport: rapport,
-                notes_technicien: notes_technicien,
-                updated_at: new Date()
-            });
+            .update(dataToUpdate);
 
         if (rowsAffected === 0) {
             return res.status(404).json({ message: "Intervention non trouvée ou non attribuée." });

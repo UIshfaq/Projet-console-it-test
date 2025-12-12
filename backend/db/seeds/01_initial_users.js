@@ -94,6 +94,19 @@ exports.seed = async function(knex) {
             nomClient: "Entreprise SécuriTech",
             rapport: "Installation réussie. Configuration du système de surveillance terminée.",
             notes_technicien: "Client satisfait de l'installation."
+        },
+
+        {
+            titre: 'Mise à Niveau du Système Wi-Fi',
+            adresse: '15 Rue du Faubourg Saint-Antoine, 75011 Paris',
+            date: formatDate(yesterday),
+            statut: 'echec',
+            technicien_id: 1,
+            description: 'Mise à niveau des points d\'accès Wi-Fi vers la dernière norme.',
+            nomClient: "Café Connecté",
+            rapport: "La mise à niveau n'a pas pu être effectuée en raison de problèmes de compatibilité avec l'équipement existant.",
+            notes_technicien: "Le matériel actuel du client n'est pas compatible avec les nouveaux points d'accès. Recommander une mise à niveau complète.",
+            failure_reason: "Problèmes de compatibilité avec l'équipement existant du client."
         }
     ]);
 };

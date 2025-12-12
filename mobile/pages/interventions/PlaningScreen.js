@@ -54,6 +54,7 @@ function InterventionScreen({ navigation }) {
             case 'terminé': return { bg: '#E8F5E9', text: '#4CAF50', label: 'Terminé' };
             case 'prevu':
             case 'prévu': return { bg: '#E3F2FD', text: '#2196F3', label: 'Prévu' };
+            case 'echec': return { bg: '#FFEBEE', text: '#F44336', label: 'Échec' };
             default: return { bg: '#F5F5F5', text: '#9E9E9E', label: status };
         }
     };

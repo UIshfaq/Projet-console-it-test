@@ -1,7 +1,7 @@
 import React, { useContext, useEffect, useState } from 'react';
 import {
     View, Text, ActivityIndicator, StyleSheet, ScrollView, SafeAreaView, TouchableOpacity, Linking, Platform,
-    TextInput, Alert
+    TextInput, Alert, Modal
 } from "react-native";
 import axios from "axios";
 import { AuthContext } from "../../contextes/AuthContexte";
@@ -17,6 +17,9 @@ function DetailScreen({ route, navigation}) {
     const [notesTechnicien, setNotesTechnicien] = useState('');
     const [rapport, setRapport] = useState('');
     const [isEditingRapport, setIsEditingRapport] = useState(false);
+    const [isClotureModalVisible, setIsClotureModalVisible] = useState(false);
+    const [echecRaison, setEchecRaison] = useState('');
+    const [isFailing, setIsFailing] = useState(false);
 
 
     const chargerDescription = async () => {
@@ -65,11 +68,10 @@ function DetailScreen({ route, navigation}) {
         );
     }
 
-    const canEdit = detailIntervention.statut !== "archiver";
+    const isFinalStatus = ['archiver', 'termine', 'echec'].includes(detailIntervention.statut);
+    const canEdit = !isFinalStatus;
 
-    const isRapportModifiable = (
-        detailIntervention.statut === "prévu" || detailIntervention.statut === "en_cours" || isEditingRapport
-    ) && canEdit;
+    const isRapportModifiable =  (detailIntervention.statut === "prévu" || detailIntervention.statut === "en_cours") || isEditingRapport;
 
 
     const modifierRapportNotes = async () => {
@@ -104,35 +106,55 @@ function DetailScreen({ route, navigation}) {
     };
 
 
-    const terminerIntervention = async () =>{
-        if (!rapport.trim()){
-            alert("Veuillez écrire votre rapport")
-            return;
+    const cloturerInterv = async (finalStatut) => {
+        if (!rapport.trim()) {
+            alert("Veuiller entrer votre rappport.")
         }
 
-        const backendUrl = `${process.env.EXPO_PUBLIC_API_URL}/api/interventions/${interventionId}`;
+        let failureReasonToSend = null;
 
+        if (finalStatut === 'echec') {
+            if (!echecRaison || echecRaison.trim().length < 10) {
+                Alert.alert("Justification requise", "Veuillez détailler la raison de l'échec (minimum 10 caractères).");
+                return;
+            }
+            failureReasonToSend = echecRaison;
+        }
         try {
-            await axios.put(backendUrl, { // <-- MÉTHODE CORRECTE : PUT
-                statut: 'termine', // Valeur obligatoire pour cette route PUT
-                notes_technicien: notesTechnicien,
-                rapport: rapport
-            }, {
-                headers: {Authorization: `Bearer ${userToken}`}
-            })
+
+            const backnedUrl = `${process.env.EXPO_PUBLIC_API_URL}/api/interventions/${interventionId}`;
+
+            await axios.put(backnedUrl,
+                {
+                    statut: finalStatut,
+                    notes_technicien: notesTechnicien,
+                    rapport: rapport,
+                    failure_reason: failureReasonToSend,
+                },
+                {
+                    headers: {Authorization: `Bearer ${userToken}`}
+                })
 
             setDetailIntervention(prev => ({
                 ...prev,
-                statut: 'termine',
+                statut: finalStatut,
                 rapport: rapport,
                 notes_technicien: notesTechnicien,
+                failure_reason: failureReasonToSend
             }));
 
-            Alert.alert("Succès","L'intervention est terminée",[{ text: "Super", onPress: () => navigation.goBack() }])
+            setIsClotureModalVisible(false);
+            setIsFailing(false);
+            setEchecRaison('');
 
-        }catch (e){
-            console.error(e);
-            Alert.alert("Erreur", "Impossible de marquer l'intervention comme terminée.");
+            Alert.alert("Succès", `L'intervention est clôturée avec le statut : ${finalStatut}`, [{
+                text: "OK",
+                onPress: () => navigation.goBack()
+            }]);
+
+        } catch (e) {
+            console.error("Erreur de clôture:", e.response?.data || e.message);
+            Alert.alert("Erreur", e.response?.data?.message || "Impossible de finaliser la clôture.");
         }
     }
 
@@ -203,6 +225,7 @@ function DetailScreen({ route, navigation}) {
             case 'termine': case 'terminé': return { bg: '#E8F5E9', text: '#4CAF50', label: 'Terminé' };
             case 'prevu': case 'prévu': return { bg: '#E3F2FD', text: '#2196F3', label: 'Prévu' };
             case 'archiver': return { bg: '#F5F5F5', text: '#9E9E9E', label: 'Archivée' };
+            case 'echec': return { bg: '#FFEBEE', text: '#F44336', label: 'Échec' };
             default: return { bg: '#F5F5F5', text: '#9E9E9E', label: status || 'Inconnu' };
         }
     };
@@ -214,52 +237,53 @@ function DetailScreen({ route, navigation}) {
         <SafeAreaView style={styles.container}>
             <ScrollView contentContainerStyle={styles.scrollContent}>
 
-                {/* --- BLOC 1 : EN-TÊTE --- */}
+                {/* --- BLOC 1 : EN-TÊTE --- (Aucun changement) */}
                 <View style={styles.headerCard}>
                     <View style={styles.headerRow}>
                         <Text style={styles.title}>{detailIntervention.titre}</Text>
-                        <View style={[styles.statusBadge, { backgroundColor: statusStyle.bg }]}>
-                            <Text style={[styles.statusText, { color: statusStyle.text }]}>
+                        <View style={[styles.statusBadge, {backgroundColor: statusStyle.bg}]}>
+                            <Text style={[styles.statusText, {color: statusStyle.text}]}>
                                 {statusStyle.label}
                             </Text>
                         </View>
                     </View>
                 </View>
 
-                {/* --- BLOC 2 : INFOS CLÉS (Date, Client, Adresse, Description Mission) --- */}
+                {/* --- BLOC 2 : INFOS CLÉS --- (Aucun changement) */}
                 <View style={styles.sectionTitleContainer}>
                     <Text style={styles.sectionTitle}>INFORMATIONS</Text>
                 </View>
 
                 <View style={styles.card}>
                     <View style={styles.infoRow}>
-                        <Ionicons name="calendar-outline" size={22} color="#007AFF" />
+                        <Ionicons name="calendar-outline" size={22} color="#007AFF"/>
                         <View style={styles.infoTextContainer}>
                             <Text style={styles.label}>Date d'intervention</Text>
                             <Text style={styles.value}>
-                                {new Date(detailIntervention.date || detailIntervention.date_debut).toLocaleDateString('fr-FR', { dateStyle: 'full' })}
+                                {new Date(detailIntervention.date || detailIntervention.date_debut).toLocaleDateString('fr-FR', {dateStyle: 'full'})}
                             </Text>
                         </View>
                     </View>
-                    <View style={styles.separator} />
+                    <View style={styles.separator}/>
                     <View style={styles.infoRow}>
-                        <Ionicons name="person-outline" size={22} color="#007AFF" />
+                        <Ionicons name="person-outline" size={22} color="#007AFF"/>
                         <View style={styles.infoTextContainer}>
                             <Text style={styles.label}>Client</Text>
-                            <Text style={styles.value}>{detailIntervention.nomClient || detailIntervention.client || "Non spécifié"}</Text>
+                            <Text
+                                style={styles.value}>{detailIntervention.nomClient || detailIntervention.client || "Non spécifié"}</Text>
                         </View>
                     </View>
-                    <View style={styles.separator} />
+                    <View style={styles.separator}/>
                     <View style={styles.infoRow}>
-                        <Ionicons name="location-outline" size={22} color="#007AFF" />
+                        <Ionicons name="location-outline" size={22} color="#007AFF"/>
                         <View style={styles.infoTextContainer}>
                             <Text style={styles.label}>Adresse</Text>
                             <Text style={styles.value}>{detailIntervention.adresse || "Aucune adresse"}</Text>
                         </View>
                     </View>
-                    <View style={styles.separator} />
+                    <View style={styles.separator}/>
                     <View style={styles.infoRow}>
-                        <Ionicons name="document-text-outline" size={22} color="#007AFF" />
+                        <Ionicons name="document-text-outline" size={22} color="#007AFF"/>
                         <View style={styles.infoTextContainer}>
                             <Text style={styles.label}>Description de la mission</Text>
                             <Text style={styles.value}>{detailIntervention.description || "Aucune description"}</Text>
@@ -267,15 +291,15 @@ function DetailScreen({ route, navigation}) {
                     </View>
                 </View>
 
-                {/* --- BOUTON GPS (Reste en place) --- */}
+                {/* --- BOUTON GPS --- (Aucun changement) */}
                 <TouchableOpacity style={styles.gpsButton} onPress={ouvrirGPS}>
-                    <Ionicons name="navigate" size={20} color="white" style={{ marginRight: 8 }} />
+                    <Ionicons name="navigate" size={20} color="white" style={{marginRight: 8}}/>
                     <Text style={styles.gpsButtonText}>Y ALLER (GPS)</Text>
                 </TouchableOpacity>
 
-                {/* --- BLOC NOTES TECHNICIEN (Modifiable sauf si archivé) --- */}
+                {/* --- BLOC NOTES TECHNICIEN --- (Aucun changement) */}
                 <View style={styles.sectionTitleContainer}>
-                    <Ionicons name="clipboard-outline" size={13} color="#888" style={{ marginRight: 5 }} />
+                    <Ionicons name="clipboard-outline" size={13} color="#888" style={{marginRight: 5}}/>
                     <Text style={styles.sectionTitle}>NOTES DU TECHNICIEN</Text>
                 </View>
 
@@ -298,27 +322,23 @@ function DetailScreen({ route, navigation}) {
                     )}
                 </View>
 
-                {/* --- BOUTON SAUVEGARDER LES NOTES --- */}
-                {/* Apparaît juste après la carte si le champ est modifiable (canEdit) ET si le rapport n'est pas en mode édition */}
+                {/* --- BOUTON SAUVEGARDER LES NOTES --- (Aucun changement) */}
                 {canEdit && !isEditingRapport && (
                     <TouchableOpacity
-                        style={[styles.validateButton, { marginBottom: 20, backgroundColor: '#6C757D' }]}
+                        style={[styles.validateButton, {marginBottom: 20, backgroundColor: '#6C757D'}]}
                         onPress={modifierRapportNotes}
                     >
-                        <Ionicons name="save-outline" size={20} color="white" style={{ marginRight: 8 }} />
+                        <Ionicons name="save-outline" size={20} color="white" style={{marginRight: 8}}/>
                         <Text style={styles.validateText}>SAUVEGARDER LES NOTES</Text>
                     </TouchableOpacity>
                 )}
 
 
-
-
-
-                {/* --- BLOC RAPPORT DE CLÔTURE --- */}
+                {/* --- BLOC RAPPORT DE CLÔTURE --- (Aucun changement) */}
                 {(detailIntervention.statut === 'termine' || detailIntervention.rapport || isRapportModifiable) && (
                     <View style={styles.successCard}>
                         <View style={styles.successHeader}>
-                            <Ionicons name="document-text-outline" size={20} color="#2E7D32" />
+                            <Ionicons name="document-text-outline" size={20} color="#2E7D32"/>
                             <Text style={styles.successTitle}>RAPPORT DE CLÔTURE</Text>
                         </View>
 
@@ -340,55 +360,152 @@ function DetailScreen({ route, navigation}) {
                     </View>
                 )}
 
-
+                {/* --- BLOC RAISON DE L'ÉCHEC (Affiche si le statut est 'echec') --- */}
+                {detailIntervention.statut === 'echec' && detailIntervention.failure_reason && (
+                    <View style={styles.failureCard}>
+                        <View style={styles.failureHeader}>
+                            <Ionicons name="warning-outline" size={20} color="#DC3545" />
+                            <Text style={styles.failureTitle}>RAISON DE L'ÉCHEC</Text>
+                        </View>
+                        <Text style={styles.failureText}>
+                            {detailIntervention.failure_reason}
+                        </Text>
+                    </View>
+                )}
                 {/* --- BOUTONS D'ACTIONS (EN BAS) --- */}
 
-                {/* 1. BOUTON DE SAUVEGARDE GÉNÉRALE (Modifie Notes et/ou Rapport) */}
-                {canEdit && (isRapportModifiable || detailIntervention.statut !== 'termine') && (
+                {/* 1. BOUTON DE SAUVEGARDE GÉNÉRALE (Modifie Notes et/ou Rapport) - Aucun changement */}
+                {(canEdit || isEditingRapport) && (
                     <TouchableOpacity
-                        style={[styles.validateButton, { backgroundColor: '#FF9800' }]}
+                        style={[styles.validateButton, {backgroundColor: '#FF9800'}]}
                         onPress={modifierRapportNotes}
                     >
-                        <Ionicons name="save-outline" size={24} color="white" />
+                        <Ionicons name="save-outline" size={24} color="white"/>
                         <Text style={styles.validateText}> SAUVEGARDER LES MODIFICATIONS</Text>
                     </TouchableOpacity>
                 )}
 
-
-                {/* 2. BOUTON TERMINER L'INTERVENTION (Passe à statut 'termine') */}
+                {/* 2. BOUTON CLÔTURER L'INTERVENTION (MODIFIÉ : Ouvre la Modale de choix) */}
                 {['en_cours', 'prévu'].includes(detailIntervention.statut) && canEdit && (
                     <TouchableOpacity
-                        style={[styles.validateButton, { marginTop: 15 }]}
-                        onPress={terminerIntervention}
+                        style={[styles.validateButton, {marginTop: 15}]}
+                        onPress={() => setIsClotureModalVisible(true)}
                     >
-                        <Ionicons name="checkmark-done-circle" size={24} color="white" />
-                        <Text style={styles.validateText}> MARQUER COMME TERMINÉ</Text>
+                        <Ionicons name="checkmark-done-circle" size={24} color="white"/>
+                        <Text style={styles.validateText}>CLÔTURER L'INTERVENTION</Text>
                     </TouchableOpacity>
                 )}
 
 
-                {/* 3. BOUTON MODIFIER LE RAPPORT (Passe en mode édition après 'termine') */}
-                {detailIntervention.statut === 'termine' && canEdit && !isEditingRapport && (
-                    <TouchableOpacity
-                        style={[styles.validateButton, { marginTop: 15, backgroundColor: '#2196F3' }]}
-                        onPress={() => setIsEditingRapport(true)}
-                    >
-                        <Ionicons name="create-outline" size={24} color="white" />
-                        <Text style={styles.validateText}> MODIFIER LE RAPPORT</Text>
-                    </TouchableOpacity>
-                )}
 
-                {/* 4. BOUTON ARCHIVER */}
-                { detailIntervention.statut === 'termine' && (
+                {/* 3. BOUTON MODIFIER LE RAPPORT (Pour corriger après clôture : TERMINÉ ou ÉCHEC) */}
+                {(detailIntervention.statut === 'termine' || detailIntervention.statut === 'echec')
+                    && !isEditingRapport
+                    && (
+                        <TouchableOpacity
+                            style={[styles.validateButton, {marginTop: 15, backgroundColor: '#2196F3'}]}
+                            onPress={() => setIsEditingRapport(true)}
+                        >
+                            <Ionicons name="create-outline" size={24} color="white"/>
+                            <Text style={styles.validateText}> MODIFIER LE RAPPORT</Text>
+                        </TouchableOpacity>
+                    )}
+
+                {/* 4. BOUTON ARCHIVER (Reste en place) - Aucun changement */}
+                {(detailIntervention.statut === 'termine' || detailIntervention.statut === 'echec') && (
                     <TouchableOpacity
                         style={[styles.validateButton, styles.archiveButton, {marginTop: 15}]}
                         onPress={archiverInterv}
                     >
-                        <Ionicons name="archive-outline" size={24} color="white" />
+                        <Ionicons name="archive-outline" size={24} color="white"/>
                         <Text style={styles.validateText}> ARCHIVER</Text>
                     </TouchableOpacity>
                 )}
             </ScrollView>
+
+
+            {/* ========================================================= */}
+            {/* --- DÉBUT DU COMPOSANT MODALE (AJOUTÉ ICI) --- */}
+            {/* ========================================================= */}
+            <Modal
+                animationType="slide"
+                transparent={true}
+                visible={isClotureModalVisible}
+                onRequestClose={() => {
+                    setIsClotureModalVisible(false);
+                    setIsFailing(false);
+                }}
+            >
+                <View style={styles.centeredView}>
+                    <View style={styles.modalView}>
+                        {/* --- Si isFailing est VRAI : Formulaire de Justification --- */}
+                        {isFailing ? (
+                            <>
+                                <Text style={styles.modalTitle}>Justification de l'échec</Text>
+                                <Text style={styles.modalSubtitle}>Veuillez expliquer pourquoi la mission n'a pu être
+                                    complétée.</Text>
+
+                                <TextInput
+                                    style={styles.inputRaisonEchec}
+                                    placeholder="Raison détaillée de l'échec..."
+                                    placeholderTextColor="#999"
+                                    multiline={true}
+                                    numberOfLines={4}
+                                    value={echecRaison}
+                                    onChangeText={setEchecRaison}
+                                />
+
+                                <View style={styles.modalButtonContainer}>
+                                    <TouchableOpacity
+                                        style={[styles.modalButton, styles.buttonCancel]}
+                                        onPress={() => setIsFailing(false)}
+                                    >
+                                        <Text style={styles.textStyle}>Retour</Text>
+                                    </TouchableOpacity>
+                                    <TouchableOpacity
+                                        style={[styles.modalButton, styles.buttonConfirmEchec]}
+                                        onPress={() => cloturerInterv('echec')}
+                                    >
+                                        <Text style={styles.textStyle}>Confirmer Échec</Text>
+                                    </TouchableOpacity>
+                                </View>
+                            </>
+                        ) : (
+                            // --- Écran de Choix Initial (Succès ou Échec) ---
+                            <>
+                                <Text style={styles.modalTitle}>Statut de la Clôture</Text>
+                                <Text style={styles.modalSubtitle}>Veuillez confirmer si la mission est terminée avec
+                                    succès ou non.</Text>
+
+                                <TouchableOpacity
+                                    style={[styles.modalButton, styles.buttonSuccess, {marginBottom: 10}]} // Ajout d'une petite marge
+                                    onPress={() => cloturerInterv('termine')}
+                                >
+                                    <Ionicons name="checkmark-circle-outline" size={20} color="white"
+                                              style={{marginRight: 8}}/>
+                                    <Text style={styles.textStyle}>Clôture Réussie (Terminée)</Text>
+                                </TouchableOpacity>
+
+                                <TouchableOpacity
+                                    style={[styles.modalButton, styles.buttonFailure]}
+                                    onPress={() => setIsFailing(true)}
+                                >
+                                    <Ionicons name="alert-circle-outline" size={20} color="white"
+                                              style={{marginRight: 8}}/>
+                                    <Text style={styles.textStyle}>Clôture avec Problème (Échec)</Text>
+                                </TouchableOpacity>
+
+                                <TouchableOpacity
+                                    style={[styles.modalButton, styles.buttonCancelOnly]}
+                                    onPress={() => setIsClotureModalVisible(false)}
+                                >
+                                    <Text style={[styles.textStyle, {color: '#6C757D'}]}>Annuler</Text>
+                                </TouchableOpacity>
+                            </>
+                        )}
+                    </View>
+                </View>
+            </Modal>
         </SafeAreaView>
     )
 }
@@ -501,6 +618,131 @@ const styles = StyleSheet.create({
         marginTop: 15,
         shadowColor: "#E67E22",
         marginBottom: 40,
+    },
+    centeredView: {
+        flex: 1,
+        justifyContent: "center",
+        alignItems: "center",
+        backgroundColor: 'rgba(0, 0, 0, 0.6)', // Arrière-plan sombre et légèrement transparent
+    },
+    modalView: {
+        margin: 20,
+        backgroundColor: "white",
+        borderRadius: 15,
+        padding: 25,
+        alignItems: "center",
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.25,
+        shadowRadius: 6,
+        elevation: 8,
+        width: '90%',
+        maxWidth: 450,
+    },
+    modalTitle: {
+        fontSize: 22,
+        fontWeight: 'bold',
+        marginBottom: 10,
+        color: '#1A1A1A',
+    },
+    modalSubtitle: {
+        fontSize: 14,
+        color: '#666',
+        textAlign: 'center',
+        marginBottom: 20,
+        lineHeight: 20,
+    },
+    inputRaisonEchec: {
+        width: '100%',
+        minHeight: 100,
+        borderColor: '#CCC',
+        borderWidth: 1,
+        borderRadius: 10,
+        padding: 12,
+        marginBottom: 20,
+        textAlignVertical: 'top',
+        fontSize: 16,
+        color: '#333',
+    },
+    modalButtonContainer: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        width: '100%',
+        marginTop: 10,
+    },
+    modalButton: {
+        borderRadius: 10,
+        padding: 15,
+        elevation: 3,
+        marginTop: 10,
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        width: '100%', // Pour les options de choix
+    },
+    buttonSuccess: {
+        backgroundColor: '#4CAF50', // Vert pour Succès
+    },
+    buttonFailure: {
+        backgroundColor: '#FF9800', // Orange pour Alerte/Problème
+    },
+    buttonConfirmEchec: {
+        backgroundColor: '#DC3545', // Rouge pour confirmer l'Échec
+        flex: 1,
+        marginLeft: 10,
+    },
+    buttonCancel: {
+        backgroundColor: '#6C757D', // Gris pour Annuler/Retour
+        flex: 1,
+        marginRight: 10,
+    },
+    buttonCancelOnly: {
+        backgroundColor: 'transparent',
+        marginTop: 15,
+        // Permet de mettre le texte en évidence sans fond
+        shadowColor: 'transparent',
+        elevation: 0,
+    },
+    textStyle: {
+        color: "white",
+        fontWeight: "bold",
+        textAlign: "center",
+        fontSize: 16,
+    },
+// Si vous voulez le bouton "Annuler" transparent
+    textStyleCancelOnly: {
+        color: '#6C757D',
+        fontWeight: "bold",
+        fontSize: 16,
+    },
+    failureCard: {
+        backgroundColor: '#FDE7E7', // Même fond que le badge 'echec'
+        borderRadius: 12,
+        padding: 16,
+        marginBottom: 20,
+        borderWidth: 1,
+        borderColor: '#F1A9A9', // Bordure rouge clair
+    },
+    failureHeader: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginBottom: 10,
+        borderBottomWidth: 1,
+        borderBottomColor: 'rgba(220, 53, 69, 0.1)', // Séparateur rouge léger
+        paddingBottom: 8
+    },
+    failureTitle: {
+        color: '#DC3545', // Rouge vif
+        fontWeight: 'bold',
+        marginLeft: 8,
+        fontSize: 14,
+        textTransform: 'uppercase',
+        letterSpacing: 0.5
+    },
+    failureText: {
+        color: '#6F1C25', // Rouge foncé pour la lecture
+        fontSize: 16,
+        lineHeight: 24,
     },
 });
 
