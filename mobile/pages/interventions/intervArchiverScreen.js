@@ -2,6 +2,7 @@ import { View, Text, FlatList, StyleSheet } from "react-native";
 import axios from "axios";
 import { AuthContext } from "../../contextes/AuthContexte";
 import React, { useContext, useState, useEffect } from "react";
+import {Ionicons} from "@expo/vector-icons";
 
 function ArchiverScreen(){
     const { userToken } = useContext(AuthContext);
@@ -15,7 +16,6 @@ function ArchiverScreen(){
                 headers: { Authorization: `Bearer ${userToken}` }
             });
             setInterventions(response.data);
-            console.log("Données chargées :", response.data);
 
         }
         catch (error) {
@@ -36,7 +36,7 @@ function ArchiverScreen(){
                 <Text style={styles.cardTitle}>
                     Intervention n°{item.id} - {item.titre}
                 </Text>
-                {/* Symbole d'archive (ou date de fin si disponible) */}
+                {/* Afficher le statut réel de l'archive (avec l'alerte si échec) */}
                 <Text style={styles.archiveSymbol}>🔒 Archivée</Text>
             </View>
 
@@ -50,10 +50,19 @@ function ArchiverScreen(){
                 <Text style={styles.rapportPreview} numberOfLines={1} ellipsizeMode="tail">
                     Rapport : {item.rapport || 'Aucun rapport enregistré.'}
                 </Text>
+
+                {/* NOUVEAU BLOC : Afficher la raison de l'échec si elle existe */}
+                {
+                    item.failure_reason &&
+                    <View style={styles.failurePreviewContainer}>
+                        <Ionicons name="alert-circle-outline" size={16} style={styles.failureIcon} />
+                        <Text style={styles.failurePreviewText} numberOfLines={1} ellipsizeMode="tail">
+                            ÉCHEC : {item.failure_reason}
+                        </Text>
+                    </View>
+                }
+
             </View>
-
-
-
         </View>
     );
 
@@ -159,6 +168,25 @@ const styles = StyleSheet.create({
         textAlign: 'center',
         marginTop: 50,
         color: 'gray',
-    }
+    },
+    failurePreviewContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginTop: 5,
+        padding: 5,
+        borderRadius: 5,
+        backgroundColor: '#FDE7E7', // Fond rouge très clair
+        borderLeftWidth: 3,
+        borderLeftColor: '#DC3545', // Ligne rouge
+    },
+    failureIcon: {
+        color: '#DC3545', // Rouge
+        marginRight: 5,
+    },
+    failurePreviewText: {
+        color: '#DC3545',
+        fontSize: 14,
+        flexShrink: 1, // Permet au texte de se limiter à la ligne
+    },
 });
 export default ArchiverScreen;

@@ -107,6 +107,19 @@ exports.seed = async function(knex) {
             rapport: "La mise à niveau n'a pas pu être effectuée en raison de problèmes de compatibilité avec l'équipement existant.",
             notes_technicien: "Le matériel actuel du client n'est pas compatible avec les nouveaux points d'accès. Recommander une mise à niveau complète.",
             failure_reason: "Problèmes de compatibilité avec l'équipement existant du client."
+        },
+
+        {
+            titre: 'Réparation de la Ligne Téléphonique',
+            adresse: '8 Place de la République, 75003 Paris',
+            date: formatDate(today),
+            statut: 'archiver',
+            technicien_id: 1,
+            description: 'Réparation d\'une ligne téléphonique endommagée.',
+            nomClient: "Mme. Martin",
+            rapport: "Ligne réparée avec succès. Tests de qualité vocale effectués.",
+            notes_technicien: "Client satisfait de la réparation rapide.",
+            failure_reason: "Problèmes de compatibilité avec l'équipement existant du client."
         }
     ]);
 };
