@@ -16,7 +16,7 @@ import {
 import { Ionicons, AntDesign } from '@expo/vector-icons';
 import axios from 'axios'
 
-import {AuthContext} from "../../contextes/AuthContexte";
+import {AuthContext} from "../../contextes/AuthContext";
 
 
 const PRIMARY_COLOR = '#6A5AE0';

@@ -1,7 +1,7 @@
 import React, {useState, useEffect, useContext, useCallback, useLayoutEffect} from 'react';
 import { View, Text, FlatList, StyleSheet, SafeAreaView, ActivityIndicator, TouchableOpacity } from 'react-native';
 import axios from "axios";
-import { AuthContext } from '../../contextes/AuthContexte';
+import { AuthContext } from '../../contextes/AuthContext';
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
 
@@ -145,7 +145,7 @@ function InterventionScreen({ navigation }) {
         <SafeAreaView style={styles.container}>
             {/* L'ancien bouton n'est plus ici, il est dans le header ! */}
 
-            {/* Si vous voulez un titre DANS la page, vous pouvez le garder, sinon vous pouvez l'enlever */}
+            {/* Si vous voulez un titre DANS la pages, vous pouvez le garder, sinon vous pouvez l'enlever */}
             {/* <Text style={styles.pageTitle}>Mes Interventions</Text> */}
 
             <FlatList

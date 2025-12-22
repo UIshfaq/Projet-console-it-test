@@ -1,6 +1,6 @@
 import { View, Text, FlatList, StyleSheet } from "react-native";
 import axios from "axios";
-import { AuthContext } from "../../contextes/AuthContexte";
+import { AuthContext } from "../../contextes/AuthContext";
 import React, { useContext, useState, useEffect } from "react";
 import {Ionicons} from "@expo/vector-icons";
 

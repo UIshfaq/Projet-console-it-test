@@ -1,6 +1,6 @@
 import React, { useContext } from "react";
 import { StyleSheet, Text, View, TouchableOpacity, SafeAreaView, StatusBar, ScrollView, Alert } from "react-native";
-import { AuthContext } from "../contextes/AuthContexte";
+import { AuthContext } from "../contextes/AuthContext.js";
 import { Ionicons } from '@expo/vector-icons';
 
 function HomeScreen({ navigation }) {

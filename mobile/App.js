@@ -1,19 +1,19 @@
 import React, { useContext } from "react";
 import { NavigationContainer } from "@react-navigation/native";
 import { createStackNavigator } from "@react-navigation/stack";
-import { AuthProvider, AuthContext } from './contextes/AuthContexte';
+import { AuthContext, AuthProvider } from "./src/contextes/AuthContext";
 
 
 
-import LoginScreen from "./pages/authentification/LoginScreen";
-import SignUpScreen from "./pages/authentification/SignUpScreen";
-import HomeScreen from "./pages/HomeScreen";
-import InterventionScreen from "./pages/interventions/PlaningScreen";
-import DetailsScreen from "./pages/interventions/detailsScreen";
-import ArchiverScreen from "./pages/interventions/intervArchiverScreen";
+import LoginScreen from "./src/pages/authenfications/LoginScreen";
+import SignUpScreen from "./src/pages/authenfications/SignUpScreen";
+import HomeScreen from "./src/pages/HomeScreen";
+import InterventionScreen from "./src/pages/intervention/PlaningScreen";
+import DetailsScreen from "./src/pages/intervention/detailsScreen";
+import ArchiverScreen from "./src/pages/intervention/intervArchiverScreen";
 // =====================================
 
-import LoadingScreen from "./pages/authentification/LoadScreen"; // Vous l'aviez déjà, c'est bien
+import LoadingScreen from "./src/pages/authenfications/LoadScreen"; // Vous l'aviez déjà, c'est bien
 
 const Stack = createStackNavigator();
 
