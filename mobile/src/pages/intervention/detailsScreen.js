@@ -102,8 +102,8 @@ function DetailScreen({ route, navigation }) {
         }
 
         try {
-            const backnedUrl = `${process.env.EXPO_PUBLIC_API_URL}/api/interventions/${interventionId}`;
-            await axios.put(backnedUrl, {
+            const backendUrl = `${process.env.EXPO_PUBLIC_API_URL}/api/interventions/${interventionId}`;
+            await axios.put(backendUrl, {
                 statut: finalStatut,
                 notes_technicien: notesTechnicien,
                 rapport: rapport,
@@ -130,23 +130,52 @@ function DetailScreen({ route, navigation }) {
     }
 
     const archiverInterv = async () => {
-        if (detailIntervention?.statut === "archiver") { return; }
+        if (detailIntervention?.statut === "archiver") {
+            return;
+        }
 
-        Alert.alert("Confirmation", "Voulez-vous vraiment archiver cette intervention ?", [
-            { text: "Annuler", style: "cancel" },
-            {
-                text: "Archiver", style: "destructive", onPress: async () => {
-                    const backUrl = `${process.env.EXPO_PUBLIC_API_URL}/api/interventions/${interventionId}/archive`;
-                    try {
-                        await axios.patch(backUrl, {}, { headers: { Authorization: `Bearer ${userToken}` } });
-                        setDetailIntervention({ ...detailIntervention, statut: 'archiver' });
-                        navigation.goBack();
-                    } catch (e) {
-                        Alert.alert("Erreur", "Impossible d'archiver.");
-                    }
+        const proceed = async () => {
+            const backUrl = `${process.env.EXPO_PUBLIC_API_URL}/api/interventions/${interventionId}/archive`;
+
+            try {
+                await axios.patch(backUrl, {}, {
+                    headers: { Authorization: `Bearer ${userToken}` },
+                    timeout: 8000
+                });
+
+                setDetailIntervention(prev => ({ ...prev, statut: 'archiver' }));
+
+                if (Platform.OS === 'web') {
+                    alert("Succès : L'intervention a été archivée.");
+                    navigation.goBack();
+                } else {
+                    Alert.alert("Succès", "L'intervention a été archivée.", [
+                        { text: "OK", onPress: () => navigation.goBack() }
+                    ]);
+                }
+            } catch (e) {
+                if (Platform.OS === 'web') {
+                    alert("Erreur : Impossible d'archiver.");
+                } else {
+                    Alert.alert("Erreur", "Impossible d'archiver cette intervention.");
                 }
             }
-        ]);
+        };
+
+        if (Platform.OS === 'web') {
+            if (window.confirm("Voulez-vous vraiment archiver cette intervention ?")) {
+                proceed();
+            }
+        } else {
+            Alert.alert(
+                "Confirmation",
+                "Voulez-vous vraiment archiver cette intervention ?",
+                [
+                    { text: "Annuler", style: "cancel" },
+                    { text: "Archiver", style: "destructive", onPress: proceed }
+                ]
+            );
+        }
     }
 
     const ouvrirGPS = () => {
@@ -267,21 +296,21 @@ function DetailScreen({ route, navigation }) {
                             </TouchableOpacity>
                         )}
 
-                        {['en_cours', 'prévu'].includes(detailIntervention.statut) && canEdit && (
+                        {['en_cours', 'prevu', 'prévu'].includes(detailIntervention.statut) && canEdit && (
                             <TouchableOpacity style={styles.actionButton} onPress={() => setIsClotureModalVisible(true)}>
                                 <Ionicons name="checkmark-done" size={22} color="white" />
                                 <Text style={styles.actionButtonText}>CLÔTURER LA MISSION</Text>
                             </TouchableOpacity>
                         )}
 
-                        {(detailIntervention.statut === 'termine' || detailIntervention.statut === 'echec') && !isEditingRapport && (
+                        {(['termine', 'terminé', 'echec'].includes(detailIntervention.statut)) && !isEditingRapport && (
                             <TouchableOpacity style={[styles.actionButton, { backgroundColor: '#2196F3' }]} onPress={() => setIsEditingRapport(true)}>
                                 <Ionicons name="create" size={22} color="white" />
                                 <Text style={styles.actionButtonText}>MODIFIER LE RAPPORT</Text>
                             </TouchableOpacity>
                         )}
 
-                        {(detailIntervention.statut === 'termine' || detailIntervention.statut === 'echec') && (
+                        {(['termine', 'terminé', 'echec'].includes(detailIntervention.statut)) && (
                             <TouchableOpacity style={[styles.actionButton, { backgroundColor: '#607D8B' }]} onPress={archiverInterv}>
                                 <Ionicons name="archive" size={22} color="white" />
                                 <Text style={styles.actionButtonText}>ARCHIVER</Text>

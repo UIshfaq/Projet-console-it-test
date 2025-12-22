@@ -7,7 +7,7 @@ const getAllInterventions = async (req, res) => {
         const technicienIdConnecte = req.userId;
 
         const interventions = await db('interventions')
-            .where({technicien_id: technicienIdConnecte})
+            .where({ technicien_id: technicienIdConnecte })
             .whereNotIn('statut', ['annule', 'archiver'])
             .orderBy('date', 'asc');
 
@@ -15,7 +15,7 @@ const getAllInterventions = async (req, res) => {
 
     } catch (e) {
         console.error("Erreur lors de la récupération des interventions:", e);
-        res.status(500).json({message: "Erreur serveur"});
+        res.status(500).json({ message: "Erreur serveur" });
     }
 }
 
@@ -24,7 +24,7 @@ const getAllInterventionsArchived = async (req, res) => {
 
     try {
         const interventionsArchivees = await db('interventions')
-            .where({ statut : 'archiver', technicien_id : technicienIdConnecte })
+            .where({ statut: 'archiver', technicien_id: technicienIdConnecte })
             .orderBy('date', 'desc');
 
         if (interventionsArchivees.length === 0) {
@@ -36,7 +36,7 @@ const getAllInterventionsArchived = async (req, res) => {
     }
     catch (e) {
         console.error("Erreur lors de la récupération des interventions archivées :", e)
-        res.status(500).json({message : "Erreur serveur"})
+        res.status(500).json({ message: "Erreur serveur" })
     }
 }
 
@@ -54,17 +54,16 @@ const getInterventionById = async (req, res) => {
                 technicien_id: technicienIdConnecte
             })
             .first()
-        if (!interventionById)
-        {
-            return res.status(404).json({message : "L'intervention est introuvable"})
+        if (!interventionById) {
+            return res.status(404).json({ message: "L'intervention est introuvable" })
         }
 
         res.status(200).json(interventionById)
 
     }
-    catch (e){
+    catch (e) {
         console.log("Erreur lors de la récuperation des détails")
-        res.status(500).json({message : "Erreur serveur"})
+        res.status(500).json({ message: "Erreur serveur" })
 
     }
 }
@@ -96,7 +95,7 @@ const terminerIntervention = async (req, res) => {
     if (statut === 'echec') {
         dataToUpdate.failure_reason = failure_reason;
     }
-    else{
+    else {
         dataToUpdate.failure_reason = null;
     }
 
@@ -114,37 +113,33 @@ const terminerIntervention = async (req, res) => {
     } catch (e) {
         console.error("Erreur lors de l'update :", e);
         res.status(500).json({ message: "Erreur serveur." });
-    }}
+    }
+}
 
 const archiverIntervention = async (req, res) => {
     const { id } = req.params
-
     const technicienIdConnecte = req.userId
 
-    try{
-
+    try {
         const rowsAffected = await db('interventions')
             .where({ id: id, technicien_id: technicienIdConnecte })
-            .update({ statut :'archiver' });
-
+            .update({ statut: 'archiver' });
 
         if (rowsAffected === 0) {
             return res.status(404).json({ message: "Intervention non trouvée ou non autorisée." });
         }
 
-
-        res.status(200).json({ message : "L'intervention est archivée avec succès. "});
+        res.status(200).json({ message: "L'intervention est archivée avec succès. " });
 
     }
     catch (e) {
-        console.error("Erreur lors de l'archivage :", e);
-        res.status(500).json({message : "Erreur serveur."})
+        res.status(500).json({ message: "Erreur serveur." })
     }
 }
 
 const modifierNotes = async (req, res) => {
     const idInterv = req.params.id
-    const  idTech  = req.userId
+    const idTech = req.userId
     const { notes_technicien, rapport } = req.body;
 
     const updates = {};
@@ -181,7 +176,7 @@ const modifierNotes = async (req, res) => {
     }
     catch (e) {
         console.error("Erreur lors de la modification :", e);
-        res.status(500).json({message : "Erreur serveur."})
+        res.status(500).json({ message: "Erreur serveur." })
 
     }
 }
