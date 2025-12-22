@@ -1,4 +1,4 @@
-import React, {useContext, useState} from 'react';
+import React, { useContext, useState } from 'react';
 
 import {
     View,
@@ -16,7 +16,7 @@ import {
 import { Ionicons, AntDesign } from '@expo/vector-icons';
 import axios from 'axios'
 
-import {AuthContext} from "../../contextes/AuthContext";
+import { AuthContext } from "../../contextes/AuthContext";
 
 
 const PRIMARY_COLOR = '#6A5AE0';
@@ -39,7 +39,7 @@ const LoginScreen = ({ navigation }) => {
 
         // console.log("CONTENU EMAIL:", `"${email}"`);
         // console.log("CONTENU PASSWORD:", `"${password}"`);
-        if (email ==="" ||password ==="") {
+        if (email === "" || password === "") {
             Alert.alert("Erreur", "Veuillez remplir tous les champs");
             console.log("erreur: champs vides");
             return;
@@ -115,6 +115,7 @@ const LoginScreen = ({ navigation }) => {
                             <TextInput
                                 style={styles.input}
                                 placeholder="exmaple@gmail.com"
+                                placeholderTextColor={TEXT_GRAY_COLOR}
                                 value={email}
                                 onChangeText={setEmail}
                                 keyboardType="email-address"
@@ -141,6 +142,7 @@ const LoginScreen = ({ navigation }) => {
                             <TextInput
                                 style={styles.input}
                                 placeholder="Password"
+                                placeholderTextColor={TEXT_GRAY_COLOR}
                                 value={password}
                                 onChangeText={setPassword}
                                 secureTextEntry={!isPasswordVisible}
@@ -187,7 +189,8 @@ const LoginScreen = ({ navigation }) => {
                 <View style={styles.bottomPattern} />
             </SafeAreaView>
         </KeyboardAvoidingView>
-    )};
+    )
+};
 
 // ... (Tous vos styles restent les mêmes)
 const styles = StyleSheet.create({

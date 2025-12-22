@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import {
     View,
     Text,
@@ -9,6 +8,8 @@ import {
     StatusBar,
     ScrollView,
     Alert,
+    KeyboardAvoidingView,
+    Platform,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import axios from 'axios';
@@ -47,7 +48,7 @@ const SignUpScreen = ({ navigation }) => {
             return;
         }
 
-        if (password.length < 8 || !/\d/.test(password) || !/[a-z]/.test(password) || !/[!@#$%^&*]/.test(password)|| !/[A-Z]/.test(password)) {
+        if (password.length < 8 || !/\d/.test(password) || !/[a-z]/.test(password) || !/[!@#$%^&*]/.test(password) || !/[A-Z]/.test(password)) {
             setStatusMessage("Erreur: Le mot de passe doit contenir au moins 8 caractères, dont une majuscule, une minuscule, un charactère spéciale et un chiffre.");
             Alert.alert("Erreur", "Le mot de passe doit contenir au moins 8 caractères. Il doit inclure des lettres, des chiffres, des caractères spéciaux et majuscle.");
             return;
@@ -97,73 +98,81 @@ const SignUpScreen = ({ navigation }) => {
     };
 
     return (
-        <SafeAreaView style={styles.safeArea}>
-            <StatusBar barStyle="dark-content" backgroundColor={SCREEN_BG_COLOR} />
-            <ScrollView contentContainerStyle={styles.container}>
-                <Text style={styles.title}>Sign Up</Text>
+        <KeyboardAvoidingView
+            behavior={Platform.OS === "ios" ? "padding" : "height"}
+            style={{ flex: 1 }}
+        >
+            <SafeAreaView style={styles.safeArea}>
+                <StatusBar barStyle="dark-content" backgroundColor={SCREEN_BG_COLOR} />
+                <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
+                    <Text style={styles.title}>Sign Up</Text>
 
-                <View style={styles.formCompactContainer}>
-                    {/* Name */}
-                    <View style={[styles.inputContainer, name.length > 0 ? styles.inputValid : null]}>
-                        <TextInput
-                            style={styles.input}
-                            placeholder="Name"
-                            value={name}
-                            onChangeText={setName}
-                            autoCapitalize="words"
-                        />
-                        {name.length > 0 ? <Ionicons name="checkmark-circle" size={22} color={VALID_COLOR} /> : null}
-                    </View>
-
-                    {/* Email */}
-                    <View style={[styles.inputContainer, isEmailValid ? styles.inputValid : null]}>
-                        <TextInput
-                            style={styles.input}
-                            placeholder="Email"
-                            value={email}
-                            onChangeText={handleEmailChange}
-                            keyboardType="email-address"
-                            autoCapitalize="none"
-                        />
-                        {isEmailValid ? <Ionicons name="checkmark-circle" size={22} color={VALID_COLOR} /> : null}
-                    </View>
-
-                    {/* Password */}
-                    <View style={[styles.inputContainer, password.length >= 8 ? styles.inputValid : null]}>
-                        <TextInput
-                            style={styles.input}
-                            placeholder="Password (min. 8 chars)"
-                            value={password}
-                            onChangeText={setPassword}
-                            secureTextEntry={!isPasswordVisible}
-                        />
-                        {password.length >= 8 ? <Ionicons name="checkmark-circle" size={22} color={VALID_COLOR} /> : null}
-                        <TouchableOpacity onPress={() => setIsPasswordVisible(!isPasswordVisible)} style={{ paddingLeft: 10 }}>
-                            <Ionicons
-                                name={isPasswordVisible ? 'eye-off-outline' : 'eye-outline'}
-                                size={22}
-                                color={TEXT_GRAY_COLOR}
+                    <View style={styles.formCompactContainer}>
+                        {/* Name */}
+                        <View style={[styles.inputContainer, name.length > 0 ? styles.inputValid : null]}>
+                            <TextInput
+                                style={styles.input}
+                                placeholder="Name"
+                                placeholderTextColor={TEXT_GRAY_COLOR}
+                                value={name}
+                                onChangeText={setName}
+                                autoCapitalize="words"
                             />
+                            {name.length > 0 ? <Ionicons name="checkmark-circle" size={22} color={VALID_COLOR} /> : null}
+                        </View>
+
+                        {/* Email */}
+                        <View style={[styles.inputContainer, isEmailValid ? styles.inputValid : null]}>
+                            <TextInput
+                                style={styles.input}
+                                placeholder="Email"
+                                placeholderTextColor={TEXT_GRAY_COLOR}
+                                value={email}
+                                onChangeText={handleEmailChange}
+                                keyboardType="email-address"
+                                autoCapitalize="none"
+                            />
+                            {isEmailValid ? <Ionicons name="checkmark-circle" size={22} color={VALID_COLOR} /> : null}
+                        </View>
+
+                        {/* Password */}
+                        <View style={[styles.inputContainer, password.length >= 8 ? styles.inputValid : null]}>
+                            <TextInput
+                                style={styles.input}
+                                placeholder="Password (min. 8 chars)"
+                                placeholderTextColor={TEXT_GRAY_COLOR}
+                                value={password}
+                                onChangeText={setPassword}
+                                secureTextEntry={!isPasswordVisible}
+                            />
+                            {password.length >= 8 ? <Ionicons name="checkmark-circle" size={22} color={VALID_COLOR} /> : null}
+                            <TouchableOpacity onPress={() => setIsPasswordVisible(!isPasswordVisible)} style={{ paddingLeft: 10 }}>
+                                <Ionicons
+                                    name={isPasswordVisible ? 'eye-off-outline' : 'eye-outline'}
+                                    size={22}
+                                    color={TEXT_GRAY_COLOR}
+                                />
+                            </TouchableOpacity>
+                        </View>
+
+                        {/* Affichage du message de statut pour le débogage (plus fiable que Alert) */}
+                        {statusMessage ? <Text style={statusMessage.startsWith('Erreur') ? styles.statusTextError : styles.statusTextSuccess}>{statusMessage}</Text> : null}
+
+                        {/* Sign Up Button */}
+                        <TouchableOpacity style={styles.button} onPress={handleSignup}>
+                            <Text style={styles.buttonText}>Sign Up</Text>
+                        </TouchableOpacity>
+
+                        {/* Link to Login */}
+                        <TouchableOpacity onPress={() => navigation.push('Login')}>
+                            <Text style={styles.linkText}>
+                                Already have an account? <Text style={styles.linkTextBold}>Log In</Text>
+                            </Text>
                         </TouchableOpacity>
                     </View>
-
-                    {/* Affichage du message de statut pour le débogage (plus fiable que Alert) */}
-                    {statusMessage ? <Text style={statusMessage.startsWith('Erreur') ? styles.statusTextError : styles.statusTextSuccess}>{statusMessage}</Text> : null}
-
-                    {/* Sign Up Button */}
-                    <TouchableOpacity style={styles.button} onPress={handleSignup}>
-                        <Text style={styles.buttonText}>Sign Up</Text>
-                    </TouchableOpacity>
-
-                    {/* Link to Login */}
-                    <TouchableOpacity onPress={() => navigation.push('Login')}>
-                        <Text style={styles.linkText}>
-                            Already have an account? <Text style={styles.linkTextBold}>Log In</Text>
-                        </Text>
-                    </TouchableOpacity>
-                </View>
-            </ScrollView>
-        </SafeAreaView>
+                </ScrollView>
+            </SafeAreaView>
+        </KeyboardAvoidingView>
     );
 };
 

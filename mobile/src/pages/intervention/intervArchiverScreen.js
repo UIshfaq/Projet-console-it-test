@@ -1,192 +1,185 @@
-import { View, Text, FlatList, StyleSheet } from "react-native";
+import React, { useContext, useState, useEffect } from "react";
+import { View, Text, FlatList, StyleSheet, SafeAreaView, TouchableOpacity, ActivityIndicator } from "react-native";
 import axios from "axios";
 import { AuthContext } from "../../contextes/AuthContext";
-import React, { useContext, useState, useEffect } from "react";
-import {Ionicons} from "@expo/vector-icons";
+import { Ionicons } from "@expo/vector-icons";
 
-function ArchiverScreen(){
+function ArchiverScreen() {
     const { userToken } = useContext(AuthContext);
     const [interventions, setInterventions] = useState([]);
+    const [isLoading, setIsLoading] = useState(true);
 
     const AfficherInterventionsArchivees = async () => {
         const backendUrl = `${process.env.EXPO_PUBLIC_API_URL}/api/interventions/archived`;
+        if (!userToken) return;
 
         try {
             const response = await axios.get(backendUrl, {
                 headers: { Authorization: `Bearer ${userToken}` }
             });
             setInterventions(response.data);
-
-        }
-        catch (error) {
+            setIsLoading(false);
+        } catch (error) {
             console.error("Erreur API :", error);
+            setIsLoading(false);
         }
     }
 
     useEffect(() => {
         AfficherInterventionsArchivees();
-    }, []);
+    }, [userToken]);
 
-    // 💡 Affichage pour vérifier
-    const renderInterventionCard = ({ item }) => (
-        <View style={styles.card}>
+    const renderInterventionCard = ({ item }) => {
+        const date = item.date || item.date_debut;
+        const formattedDate = date ? new Date(date).toLocaleDateString('fr-FR', {
+            day: '2-digit',
+            month: 'short',
+            year: 'numeric'
+        }) : "--/--/----";
 
-            {/* 1. Header de la Carte (Titre et Statut/Symbole) */}
-            <View style={styles.cardHeader}>
-                <Text style={styles.cardTitle}>
-                    Intervention n°{item.id} - {item.titre}
-                </Text>
-                {/* Afficher le statut réel de l'archive (avec l'alerte si échec) */}
-                <Text style={styles.archiveSymbol}>🔒 Archivée</Text>
-            </View>
+        return (
+            <View style={styles.card}>
+                <View style={styles.cardHeader}>
+                    <View style={styles.titleContainer}>
+                        <Text style={styles.cardTitle}>{item.titre || "Mission sans titre"}</Text>
+                        <Text style={styles.dateText}>{formattedDate}</Text>
+                    </View>
+                    <View style={styles.archiveBadge}>
+                        <Ionicons name="lock-closed" size={12} color="#888" />
+                        <Text style={styles.archiveBadgeText}>ARCHIVÉ</Text>
+                    </View>
+                </View>
 
-            {/* 2. Corps de la Carte (Infos principales) */}
-            <View style={styles.cardBody}>
-                <Text style={styles.clientLabel}>Client :</Text>
-                <Text style={styles.clientValue}>{item.nomClient || 'Client inconnu'}</Text>
+                <View style={styles.cardBody}>
+                    <View style={styles.infoRow}>
+                        <Ionicons name="person-outline" size={16} color="#6A5AE0" style={styles.icon} />
+                        <Text style={styles.infoText}>{item.nomClient || 'Client inconnu'}</Text>
+                    </View>
 
-                {/* Un aperçu du rapport (limité à une ligne) */}
-                <View style={styles.separator} />
-                <Text style={styles.rapportPreview} numberOfLines={1} ellipsizeMode="tail">
-                    Rapport : {item.rapport || 'Aucun rapport enregistré.'}
-                </Text>
-
-                {/* NOUVEAU BLOC : Afficher la raison de l'échec si elle existe */}
-                {
-                    item.failure_reason &&
-                    <View style={styles.failurePreviewContainer}>
-                        <Ionicons name="alert-circle-outline" size={16} style={styles.failureIcon} />
-                        <Text style={styles.failurePreviewText} numberOfLines={1} ellipsizeMode="tail">
-                            ÉCHEC : {item.failure_reason}
+                    <View style={styles.rapportBox}>
+                        <Text style={styles.rapportLabel}>Compte-rendu final :</Text>
+                        <Text style={styles.rapportText} numberOfLines={3}>
+                            {item.rapport || 'Aucun rapport enregistré.'}
                         </Text>
                     </View>
-                }
 
+                    {item.failure_reason && (
+                        <View style={styles.failureBox}>
+                            <Ionicons name="alert-circle" size={16} color="#E74C3C" style={styles.icon} />
+                            <Text style={styles.failureText}>{item.failure_reason}</Text>
+                        </View>
+                    )}
+                </View>
             </View>
-        </View>
-    );
+        );
+    };
 
-    // 💡 Affichage
-    return(
-        <View style={styles.container}>
+    if (isLoading) {
+        return (
+            <View style={styles.centerContainer}>
+                <ActivityIndicator size="large" color="#6A5AE0" />
+            </View>
+        );
+    }
+
+    return (
+        <SafeAreaView style={styles.container}>
+            <View style={styles.header}>
+                <Text style={styles.headerTitle}>Historique</Text>
+                <Text style={styles.headerSubtitle}>{interventions.length} interventions archivées</Text>
+            </View>
+
             {interventions.length > 0 ? (
                 <FlatList
                     data={interventions}
                     keyExtractor={(item) => item.id.toString()}
                     renderItem={renderInterventionCard}
                     contentContainerStyle={styles.flatListContent}
+                    showsVerticalScrollIndicator={false}
                 />
             ) : (
-                <Text style={styles.noDataText}>Aucune intervention archivée trouvée.</Text>
+                <View style={styles.emptyContainer}>
+                    <Ionicons name="archive-outline" size={64} color="#CCC" />
+                    <Text style={styles.noDataText}>Aucune intervention archivée.</Text>
+                </View>
             )}
-        </View>
-    )
+        </SafeAreaView>
+    );
 }
 
-// Exemple de styles minimalistes pour la démonstration
 const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-        backgroundColor: '#f5f5f5', // Un fond légèrement gris
-        paddingTop: 10,
-    },
-    flatListContent: {
-        paddingHorizontal: 10, // Ajouter une marge horizontale à la liste
-    },
+    container: { flex: 1, backgroundColor: '#F0F2F5' },
+    centerContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#F0F2F5' },
 
-    // --- Styles de la Carte (Card) ---
+    header: {
+        padding: 20,
+        backgroundColor: '#FFF',
+        borderBottomWidth: 1,
+        borderBottomColor: '#F0F0F0',
+    },
+    headerTitle: { fontSize: 24, fontWeight: 'bold', color: '#1A1A1A' },
+    headerSubtitle: { fontSize: 14, color: '#666', marginTop: 4 },
+
+    flatListContent: { padding: 16, paddingBottom: 120 },
+
     card: {
         backgroundColor: 'white',
-        borderRadius: 8,
-        padding: 15,
-        marginBottom: 10,
-        // Ombre pour effet de "flottement"
+        borderRadius: 20,
+        padding: 20,
+        marginBottom: 16,
         shadowColor: "#000",
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.1,
-        shadowRadius: 3.84,
-        elevation: 5,
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.05,
+        shadowRadius: 10,
+        elevation: 3,
     },
-
-    // --- Header ---
     cardHeader: {
         flexDirection: 'row',
         justifyContent: 'space-between',
-        alignItems: 'center',
-        marginBottom: 8,
+        alignItems: 'flex-start',
+        marginBottom: 15,
     },
-    cardTitle: {
-        fontWeight: 'bold',
-        fontSize: 16,
-        color: '#333',
-        flexShrink: 1,
-        marginRight: 10,
-    },
-    archiveSymbol: {
-        fontSize: 12,
-        fontWeight: '600',
-        color: 'gray',
-    },
+    titleContainer: { flex: 1 },
+    cardTitle: { fontSize: 18, fontWeight: 'bold', color: '#1A1A1A', marginBottom: 4 },
+    dateText: { fontSize: 13, color: '#999', fontWeight: '500' },
 
-    // --- Body ---
-    cardBody: {
-        paddingVertical: 5,
-    },
-    clientLabel: {
-        fontSize: 12,
-        color: '#666',
-    },
-    clientValue: {
-        fontSize: 14,
-        fontWeight: '500',
-        marginBottom: 5,
-    },
-    separator: {
-        height: 1,
-        backgroundColor: '#eee',
-        marginVertical: 5,
-    },
-    rapportPreview: {
-        fontSize: 14,
-        fontStyle: 'italic',
-        color: '#555',
-    },
-
-    // --- Footer ---
-    cardFooter: {
-        marginTop: 10,
-        alignItems: 'flex-end',
-    },
-    viewDetailsText: {
-        color: '#007AFF', // Couleur bleue typique pour un lien
-        fontSize: 13,
-        fontWeight: '500',
-    },
-
-    // --- No Data ---
-    noDataText: {
-        textAlign: 'center',
-        marginTop: 50,
-        color: 'gray',
-    },
-    failurePreviewContainer: {
+    archiveBadge: {
         flexDirection: 'row',
         alignItems: 'center',
-        marginTop: 5,
-        padding: 5,
-        borderRadius: 5,
-        backgroundColor: '#FDE7E7', // Fond rouge très clair
+        backgroundColor: '#F5F5F5',
+        paddingHorizontal: 10,
+        paddingVertical: 5,
+        borderRadius: 12,
+        marginLeft: 10,
+    },
+    archiveBadgeText: { fontSize: 10, fontWeight: 'bold', color: '#888', marginLeft: 4 },
+
+    cardBody: { gap: 12 },
+    infoRow: { flexDirection: 'row', alignItems: 'center' },
+    icon: { marginRight: 8 },
+    infoText: { fontSize: 15, color: '#444', fontWeight: '500' },
+
+    rapportBox: {
+        backgroundColor: '#F9FAFB',
+        padding: 12,
+        borderRadius: 12,
         borderLeftWidth: 3,
-        borderLeftColor: '#DC3545', // Ligne rouge
+        borderLeftColor: '#6A5AE0',
     },
-    failureIcon: {
-        color: '#DC3545', // Rouge
-        marginRight: 5,
+    rapportLabel: { fontSize: 12, fontWeight: 'bold', color: '#6A5AE0', marginBottom: 4 },
+    rapportText: { fontSize: 14, color: '#666', lineHeight: 20 },
+
+    failureBox: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: '#FFF5F5',
+        padding: 10,
+        borderRadius: 10,
     },
-    failurePreviewText: {
-        color: '#DC3545',
-        fontSize: 14,
-        flexShrink: 1, // Permet au texte de se limiter à la ligne
-    },
+    failureText: { flex: 1, fontSize: 13, color: '#E74C3C', fontWeight: '500' },
+
+    emptyContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingBottom: 100 },
+    noDataText: { textAlign: 'center', marginTop: 20, color: '#999', fontSize: 16 },
 });
+
 export default ArchiverScreen;
