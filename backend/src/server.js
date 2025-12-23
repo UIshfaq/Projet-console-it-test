@@ -18,6 +18,9 @@ app.use('/auth', authRoutes); // Préfixe: /auth/register, /auth/login, etc.
 const interventionRoutes = require('./routes/interventionRoutes');
 app.use('/api/interventions', interventionRoutes);
 
+const inventairesRoutes = require('./routes/inventairesRoutes');
+app.use('/api/inventaires', inventairesRoutes);
+
 
 
 // --- Démarrage du serveur ---
