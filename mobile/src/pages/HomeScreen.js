@@ -72,7 +72,7 @@ function HomeScreen({ navigation }) {
                         title="Stock"
                         subtitle="Inventaire"
                         color="#FF9800"
-                        onPress={() => handleNavigation(null)}
+                        onPress={() => handleNavigation("Inventaires")}
                     />
                     <QuickActionButton
                         icon="construct-outline"

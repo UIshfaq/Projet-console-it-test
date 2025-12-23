@@ -7,11 +7,16 @@ import { Ionicons } from '@expo/vector-icons';
 
 import LoginScreen from "./src/pages/authenfications/LoginScreen";
 import SignUpScreen from "./src/pages/authenfications/SignUpScreen";
+
 import HomeScreen from "./src/pages/HomeScreen";
+
 import InterventionScreen from "./src/pages/intervention/PlaningScreen";
 import DetailsScreen from "./src/pages/intervention/detailsScreen";
 import ArchiverScreen from "./src/pages/intervention/intervArchiverScreen";
+
 import LoadingScreen from "./src/pages/authenfications/LoadScreen";
+
+import InventaireScreen from "./src/pages/inventaire/inventaireScreen";
 
 import ProfileScreen from "./src/pages/authenfications/ProfileScreen";
 
@@ -98,6 +103,7 @@ const AppNavigator = () => (
     }}>
         <Stack.Screen name="Main" component={TabNavigator} options={{ headerShown: false }} />
         <Stack.Screen name="Detail" component={DetailsScreen} options={{ title: 'Détail Mission' }} />
+        <Stack.Screen name="Inventaires" component={InventaireScreen}></Stack.Screen>
     </Stack.Navigator>
 );
 
