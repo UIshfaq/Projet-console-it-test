@@ -6,6 +6,7 @@ import {
 import axios from "axios";
 import { AuthContext } from "../../contextes/AuthContext";
 import { Ionicons } from '@expo/vector-icons';
+import SignatureScreen from "react-native-signature-canvas";
 
 function DetailScreen({ route, navigation }) {
     const { interventionId } = route.params;
@@ -20,6 +21,8 @@ function DetailScreen({ route, navigation }) {
     const [isClotureModalVisible, setIsClotureModalVisible] = useState(false);
     const [echecRaison, setEchecRaison] = useState('');
     const [isFailing, setIsFailing] = useState(false);
+    const [isSignatureVisible, setSignatureVisible] = useState(false);
+    const [signatureData, setSignatureData] = useState(null);
 
     // Nouveaux states pour le matériel
     const [materials, setMaterials] = useState([]);
@@ -112,47 +115,90 @@ function DetailScreen({ route, navigation }) {
             Alert.alert("Erreur", "Impossible d'enregistrer les modifications.");
         }
     };
+    const cloturerInterv = async (finalStatut, signatureDirecte = null) => {
+        console.log("👉 Tentative clôture :", finalStatut);
 
-    const cloturerInterv = async (finalStatut) => {
-        if (!rapport.trim()) {
-            Alert.alert("Action requise", "Veuillez entrer votre rapport avant de clôturer.");
+        // 1. Vérif Rapport
+        if (!rapport || rapport.trim() === '') {
+            Alert.alert("Rapport manquant", "Veuillez écrire un rapport avant de valider.");
             return;
         }
 
+        // 2. Vérif Raison Echec
         let failureReasonToSend = null;
         if (finalStatut === 'echec') {
             if (!echecRaison || echecRaison.trim().length < 10) {
-                Alert.alert("Justification requise", "Veuillez détailler la raison de l'échec (min 10 car.).");
+                Alert.alert("Précision requise", "Veuillez détailler la raison de l'échec (min 10 car.).");
                 return;
             }
             failureReasonToSend = echecRaison;
         }
 
+        // 3. LOGIQUE D'OUVERTURE DE SIGNATURE (Le cœur du problème)
+        let finalSignature = null;
+
+        if (finalStatut === 'termine') {
+            // On prend la signature qui vient d'être faite (signatureDirecte) OU celle en mémoire
+            finalSignature = signatureDirecte || signatureData;
+
+            // SI PAS DE SIGNATURE : ON DOIT OUVRIR LA FENÊTRE
+            if (!finalSignature) {
+                console.log("🛑 Pas de signature -> On lance la procédure d'ouverture");
+
+                // A. On ferme la modale de choix "Succès/Echec"
+                setIsClotureModalVisible(false);
+
+                // B. On attend 500ms que l'animation se finisse (INDISPENSABLE SUR TEL)
+                setTimeout(() => {
+                    console.log("🔓 Ouverture modale signature maintenant");
+                    setSignatureVisible(true);
+                }, 500);
+
+                return; // ON S'ARRÊTE LÀ. On attend que l'utilisateur signe.
+            }
+        }
+
+        // 4. SI ON ARRIVE ICI : C'est qu'on a la signature (ou que c'est un échec)
+        // -> ON ENVOIE TOUT AU BACKEND
         try {
+            console.log("🚀 Envoi au serveur avec signature :", finalSignature ? "OUI" : "NON");
+
             const backendUrl = `${process.env.EXPO_PUBLIC_API_URL}/api/interventions/${interventionId}`;
+
             await axios.put(backendUrl, {
                 statut: finalStatut,
                 notes_technicien: notesTechnicien,
                 rapport: rapport,
                 failure_reason: failureReasonToSend,
+                signature: finalSignature // Ici ça envoie soit le dessin (Mobile), soit le texte simulé (Web)
             }, {
                 headers: { Authorization: `Bearer ${userToken}` }
             });
 
+            // Mise à jour locale pour que l'écran soit joli
             setDetailIntervention(prev => ({
                 ...prev,
                 statut: finalStatut,
                 rapport: rapport,
                 notes_technicien: notesTechnicien,
-                failure_reason: failureReasonToSend
+                failure_reason: failureReasonToSend,
+                signature: finalSignature
             }));
 
+            // Nettoyage final
             setIsClotureModalVisible(false);
+            setSignatureVisible(false);
             setIsFailing(false);
             setEchecRaison('');
-            Alert.alert("Mission Terminée", `Statut : ${finalStatut}`, [{ text: "OK", onPress: () => navigation.goBack() }]);
+
+            Alert.alert("Mission Terminée", "Intervention clôturée avec succès !", [
+                { text: "Super", onPress: () => navigation.goBack() }
+            ]);
+
         } catch (e) {
-            Alert.alert("Erreur", "Impossible de finaliser la clôture.");
+            console.error(e);
+            const msg = e.response?.data?.message || "Erreur lors de la sauvegarde.";
+            Alert.alert("Erreur", msg);
         }
     }
 
@@ -255,6 +301,25 @@ function DetailScreen({ route, navigation }) {
             setMaterials(materials)
         }
     }
+
+    const handleSignatureOK = (signature) => {
+        // 1. On sauvegarde (utile pour l'affichage si besoin)
+        setSignatureData(signature);
+
+        // 2. On ferme la modale de signature
+        setSignatureVisible(false);
+
+        // 3. On relance la clôture, mais cette fois AVEC la signature en argument
+        // Petit délai pour laisser la modale se fermer proprement
+        setTimeout(() => {
+            cloturerInterv('termine', signature);
+        }, 100);
+    };
+
+
+    const handleSignatureEmpty = () => {
+        Alert.alert("Attention", "La signature est obligatoire pour valider.");
+    };
 
     const statusStyle = getStatusStyle(detailIntervention.statut);
 
@@ -474,6 +539,43 @@ function DetailScreen({ route, navigation }) {
                             )}
                         </View>
                     </KeyboardAvoidingView>
+                </Modal>
+
+                {/* --- MODALE DE SIGNATURE --- */}
+                <Modal
+                    visible={isSignatureVisible}
+                    animationType="slide"
+                    onRequestClose={() => setSignatureVisible(false)}
+                >
+                    {/* Zone de dessin ou Bouton Simulation (Web) */}
+                    <View style={{ flex: 1, borderColor: '#000', borderWidth: 1, marginHorizontal: 20, marginBottom: 20, justifyContent: 'center' }}>
+
+                        {Platform.OS === 'web' ? (
+                            // --- VERSION WEB (Pour tester sans planter) ---
+                            <View style={{ alignItems: 'center', padding: 20 }}>
+                                <Text style={{ marginBottom: 20, color: 'orange', fontWeight: 'bold' }}>
+                                    ⚠️ Signature non disponible sur Web
+                                </Text>
+                                <TouchableOpacity
+                                    onPress={() => handleSignatureOK("signature_simulee_web")}
+                                    style={{ backgroundColor: '#2196F3', padding: 15, borderRadius: 8 }}
+                                >
+                                    <Text style={{ color: 'white' }}>SIMULER UNE SIGNATURE</Text>
+                                </TouchableOpacity>
+                            </View>
+                        ) : (
+                            // --- VERSION MOBILE (La vraie signature) ---
+                            <SignatureScreen
+                                onOK={handleSignatureOK}
+                                onEmpty={handleSignatureEmpty}
+                                descriptionText="Signez ici"
+                                clearText="Effacer"
+                                confirmText="Valider & Clôturer"
+                                webStyle={`.m-signature-pad--footer { margin-top: 20px; } body {background-color: #f9f9f9;}`}
+                            />
+                        )}
+
+                    </View>
                 </Modal>
             </SafeAreaView>
         </KeyboardAvoidingView>

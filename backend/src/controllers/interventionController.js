@@ -70,7 +70,7 @@ const getInterventionById = async (req, res) => {
 
 const terminerIntervention = async (req, res) => {
     const { id } = req.params;
-    const { statut, rapport, notes_technicien, failure_reason } = req.body;
+    const { statut, rapport, notes_technicien, failure_reason, signature } = req.body;
     const technicienIdConnecte = req.userId;
 
     if (!statut || !rapport || rapport.trim() === '') {
@@ -80,38 +80,47 @@ const terminerIntervention = async (req, res) => {
     if (statut === 'echec') {
         if (!failure_reason || failure_reason.trim().length < 10) {
             return res.status(400).json({
-                message: "La raison de l'échec est obligatoire et doit être détaillée (minimum 10 caractères)."
+                message: "La raison de l'échec est obligatoire (min 10 caractères)."
             });
         }
     }
 
+    else if (statut === 'termine') {
+        if (!signature || signature.trim() === '') {
+            return res.status(400).json({
+                message: "La signature du client est obligatoire pour valider l'intervention."
+            });
+        }
+    }
+
+    // Préparation des données
     const dataToUpdate = {
         statut: statut,
         rapport: rapport,
         notes_technicien: notes_technicien,
-        updated_at: new Date()
+        updated_at: new Date(),
+        signature: signature || null
     };
 
     if (statut === 'echec') {
         dataToUpdate.failure_reason = failure_reason;
-    }
-    else {
+    } else {
         dataToUpdate.failure_reason = null;
     }
 
     try {
-        const rowsAffected = await db('interventions')
+        const rowsAffected = await db('interventions') // Attention au 's' pluriel
             .where({ id: id, technicien_id: technicienIdConnecte })
             .update(dataToUpdate);
 
         if (rowsAffected === 0) {
-            return res.status(404).json({ message: "Intervention non trouvée ou non attribuée." });
+            return res.status(404).json({ message: "Intervention introuvable ou non attribuée." });
         }
 
-        res.json({ message: "Modification de l'état de intervention réussie" });
+        res.json({ message: "Intervention clôturée avec succès !" });
 
     } catch (e) {
-        console.error("Erreur lors de l'update :", e);
+        console.error("Erreur update :", e);
         res.status(500).json({ message: "Erreur serveur." });
     }
 }
