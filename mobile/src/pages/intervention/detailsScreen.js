@@ -23,8 +23,6 @@ function DetailScreen({ route, navigation }) {
     const [isFailing, setIsFailing] = useState(false);
     const [isSignatureVisible, setSignatureVisible] = useState(false);
     const [signatureData, setSignatureData] = useState(null);
-
-    // Nouveaux states pour le matériel
     const [materials, setMaterials] = useState([]);
     const [isLoadingMaterials, setIsLoadingMaterials] = useState(true);
 
