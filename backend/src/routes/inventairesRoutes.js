@@ -10,4 +10,6 @@ router.get('/', inventairesController.getAllInventaires );
 
 router.post('/', inventairesController.addInventaire );
 
+router.get('/:id/materials', inventairesController.getMaterialsForIntervention );
+
 module.exports = router;

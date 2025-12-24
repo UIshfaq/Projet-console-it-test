@@ -33,7 +33,28 @@ const addInventaire = async (req, res) => {
     }
 }
 
+const getMaterialsForIntervention = async (req,res) => {
+    const interventionId = req.params.id
+    const technicien_id = req.userId
+
+    try{
+        const rows = await db('intervention_materials')
+            .join('materials', 'intervention_materials.material_id', '=', 'materials.id')
+            .join('interventions', 'intervention_materials.intervention_id', '=', 'interventions.id')
+            .select('quantity_required', 'to_bring','is_checked','materials.id as material_id','materials.name','materials.reference')
+            .where('intervention_materials.intervention_id', interventionId)
+            .andWhere('interventions.technicien_id', technicien_id);
+
+        res.status(200).json(rows)
+    }
+    catch (e) {
+        console.error("Erreur lors de la récupération des matériaux pour l'intervention :", e)
+        res.status(500).json({message: "Erreur serveur"})
+    }
+}
+
 module.exports = {
     getAllInventaires,
     addInventaire,
+    getMaterialsForIntervention
 }
