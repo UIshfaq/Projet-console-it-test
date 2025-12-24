@@ -11,9 +11,9 @@ function DetailScreen({ route, navigation }) {
     const { interventionId } = route.params;
     const { userToken } = useContext(AuthContext);
 
+    // --- 1. TOUS LES STATES EN PREMIER ---
     const [detailIntervention, setDetailIntervention] = useState(null);
     const [loading, setLoading] = useState(true);
-
     const [notesTechnicien, setNotesTechnicien] = useState('');
     const [rapport, setRapport] = useState('');
     const [isEditingRapport, setIsEditingRapport] = useState(false);
@@ -21,6 +21,11 @@ function DetailScreen({ route, navigation }) {
     const [echecRaison, setEchecRaison] = useState('');
     const [isFailing, setIsFailing] = useState(false);
 
+    // Nouveaux states pour le matériel
+    const [materials, setMaterials] = useState([]);
+    const [isLoadingMaterials, setIsLoadingMaterials] = useState(true);
+
+    // --- 2. LES FONCTIONS ---
     const chargerDescription = async () => {
         const backendUrl = `${process.env.EXPO_PUBLIC_API_URL}/api/interventions/${interventionId}`;
         try {
@@ -32,15 +37,35 @@ function DetailScreen({ route, navigation }) {
             if (data.rapport) setRapport(data.rapport);
             if (data.notes_technicien) setNotesTechnicien(data.notes_technicien);
         } catch (e) {
-            console.error("Erreur API :", e);
+            console.error("Erreur API Détails :", e);
         } finally {
             setLoading(false);
         }
-    }
+    };
 
+    const fetchMaterials = async () => {
+
+        const backendUrl = `${process.env.EXPO_PUBLIC_API_URL}/api/inventaires/${interventionId}/materials`;
+        try {
+            const response = await axios.get(backendUrl, {
+                headers: { Authorization: `Bearer ${userToken}` }
+            });
+            setMaterials(response.data);
+        }
+        catch (e) {
+            console.error("Erreur récupération matériaux :", e);
+        } finally {
+            setIsLoadingMaterials(false);
+        }
+    };
+
+    // --- 3. LES USE EFFECTS (Toujours avant les returns !) ---
     useEffect(() => {
         chargerDescription();
+        fetchMaterials(); // On peut lancer les deux en même temps ici
     }, []);
+
+    console.log(materials);
 
     if (loading) {
         return (
@@ -59,6 +84,8 @@ function DetailScreen({ route, navigation }) {
             </View>
         );
     }
+
+
 
     const isFinalStatus = ['archiver', 'termine', 'echec'].includes(detailIntervention.statut);
     const canEdit = !isFinalStatus;
@@ -201,6 +228,34 @@ function DetailScreen({ route, navigation }) {
         }
     };
 
+    const toBring = materials.filter(m => m.to_bring === 1 || m.to_bring === true);
+    const onSite = materials.filter(m => m.to_bring === 0 || m.to_bring === false);
+
+    const toggleCheck = async (materialId, currentStatus) => {
+        const newStatus = currentStatus ? 0 : 1;
+
+
+        const updatedMaterials = materials.map(item => {
+            if (item.material_id === materialId) {
+                return { ...item, is_checked: newStatus };
+            }
+            return item;
+        });
+        setMaterials(updatedMaterials);
+
+        const backendUrl = `${process.env.EXPO_PUBLIC_API_URL}/api/inventaires/${interventionId}/materials/${materialId}`;
+
+        try {
+            await axios.put(backendUrl, { is_checked: newStatus },
+                { headers: { Authorization: `Bearer ${userToken}` } }
+            );
+        }
+        catch (e) {
+            console.error("Erreur mise à jour check :", e);
+            setMaterials(materials)
+        }
+    }
+
     const statusStyle = getStatusStyle(detailIntervention.statut);
 
     return (
@@ -230,6 +285,58 @@ function DetailScreen({ route, navigation }) {
                         <InfoRow icon="location" label="Adresse" value={detailIntervention.adresse || "Non spécifiée"} isAddress onPress={ouvrirGPS} />
                         <InfoRow icon="information-circle" label="Description" value={detailIntervention.description || "Aucune description fournie"} />
                     </View>
+
+
+                    <View style={styles.sectionContainer}>
+                        <Text style={styles.sectionTitle}>📦 Matériel à emporter</Text>
+
+                        {isLoadingMaterials ? (
+                            <ActivityIndicator color="#6A5AE0" />
+                        ) : toBring.length === 0 ? (
+                            <Text style={styles.emptyText}>Aucun matériel requis pour cette intervention.</Text>
+                        ) : (
+                            toBring.map((item, index) => (
+                                <TouchableOpacity
+                                    key={index}
+                                    style={styles.checkboxRow}
+                                    onPress={() => toggleCheck(item.material_id)}
+                                >
+                                    {/* La Case à Cocher */}
+                                    <Ionicons
+                                        name={item.is_checked ? "checkbox" : "square-outline"}
+                                        size={24}
+                                        color={item.is_checked ? "#6A5AE0" : "#666"}
+                                    />
+
+                                    {/* Le Texte */}
+                                    <View style={styles.materialInfo}>
+                                        <Text style={[
+                                            styles.materialName,
+                                            item.is_checked && styles.strikethrough // Barre le texte si coché
+                                        ]}>
+                                            {item.quantity_required}x {item.name}
+                                        </Text>
+                                        <Text style={styles.materialRef}>{item.reference}</Text>
+                                    </View>
+                                </TouchableOpacity>
+                            ))
+                        )}
+                    </View>
+
+                    {/* --- SECTION DÉJÀ SUR PLACE (Optionnel) --- */}
+                    {onSite.length > 0 && (
+                        <View style={[styles.sectionContainer, { marginTop: 10 }]}>
+                            <Text style={styles.subSectionTitle}>🏠 Déjà sur place (Client)</Text>
+                            {onSite.map((item, index) => (
+                                <View key={index} style={styles.readOnlyRow}>
+                                    <Ionicons name="information-circle-outline" size={20} color="#666" />
+                                    <Text style={styles.readOnlyText}>
+                                        {item.quantity_required}x {item.name}
+                                    </Text>
+                                </View>
+                            ))}
+                        </View>
+                    )}
 
                     {/* --- ACTION GPS --- */}
                     <TouchableOpacity style={styles.gpsButton} onPress={ouvrirGPS}>
@@ -494,7 +601,49 @@ const styles = StyleSheet.create({
     statusOption: { flexDirection: 'row', alignItems: 'center', borderWidth: 1.5, borderRadius: 20, padding: 20, marginBottom: 15 },
     statusOptionText: { fontSize: 16, fontWeight: '700', marginLeft: 15 },
     modalCloseBtn: { marginTop: 10, alignSelf: 'center', padding: 10 },
-    modalCloseText: { color: '#999', fontWeight: '600' }
+    modalCloseText: { color: '#999', fontWeight: '600' },
+
+    sectionContainer: {
+        marginTop: 20,
+        backgroundColor: '#FFF',
+        padding: 15,
+        borderRadius: 12,
+    },
+    subSectionTitle: {
+        fontSize: 14,
+        fontWeight: '600',
+        marginBottom: 8,
+        color: '#7F8C8D',
+        marginTop: 10,
+    },
+    checkboxRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingVertical: 10,
+        borderBottomWidth: 1,
+        borderBottomColor: '#F0F0F0',
+    },
+    materialInfo: {
+        marginLeft: 12,
+    },
+    materialName: {
+        fontSize: 16,
+        color: '#333',
+    },
+    materialRef: {
+        fontSize: 12,
+        color: '#999',
+    },
+    strikethrough: {
+        textDecorationLine: 'line-through',
+        color: '#AAA',
+    },
+    readOnlyRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingVertical: 5,
+    },
+
 });
 
 export default DetailScreen;

@@ -14,7 +14,7 @@ const getAllInventaires = async (req, res) => {
 }
 
 
-const addInventaire = async (req, res) => {
+/*const addInventaire = async (req, res) => {
     try {
         const {name, reference, stock_quantity} = req.body
 
@@ -31,11 +31,13 @@ const addInventaire = async (req, res) => {
         console.error("Erreur lors de l'ajout de l'inventaire :", e)
         res.status(500).json({message: "Erreur serveur"})
     }
-}
+}*/
 
 const getMaterialsForIntervention = async (req,res) => {
     const interventionId = req.params.id
     const technicien_id = req.userId
+
+
 
     try{
         const rows = await db('intervention_materials')
@@ -53,8 +55,29 @@ const getMaterialsForIntervention = async (req,res) => {
     }
 }
 
+const toggleCheckMaterial = async (req, res) => {
+    const interventionId = req.params.id;
+    const materialId = req.params.materialId;
+    const { is_checked } = req.body;
+
+    try {
+        await db('intervention_materials')
+            .where({
+                intervention_id: interventionId,
+                material_id: materialId
+            })
+            .update({ is_checked: is_checked ? 1 : 0 });
+
+        res.status(200).json({ message: "Statut mis à jour" });
+    } catch (e) {
+        console.error("Erreur update check :", e);
+        res.status(500).json({ message: "Erreur serveur" });
+    }
+};
+
 module.exports = {
     getAllInventaires,
-    addInventaire,
-    getMaterialsForIntervention
+    // addInventaire,
+    getMaterialsForIntervention,
+    toggleCheckMaterial
 }

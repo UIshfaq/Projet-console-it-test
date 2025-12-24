@@ -8,8 +8,10 @@ router.use(verifyToken);
 
 router.get('/', inventairesController.getAllInventaires );
 
-router.post('/', inventairesController.addInventaire );
+//router.post('/', inventairesController.addInventaire );
 
 router.get('/:id/materials', inventairesController.getMaterialsForIntervention );
+
+router.put('/:id/materials/:materialId', inventairesController.toggleCheckMaterial);
 
 module.exports = router;
