@@ -5,6 +5,7 @@ const app = express();
 const verifyToken = require('./middlewares/authMiddleware');
 const db = require('./db-connection'); // Assurez-vous que ce chemin est correct
 
+
 app.use(cors());
 
 // 2. Middleware pour lire et parser le corps des requêtes en JSON
@@ -20,6 +21,9 @@ app.use('/api/interventions', interventionRoutes);
 
 const inventairesRoutes = require('./routes/inventairesRoutes');
 app.use('/api/inventaires', inventairesRoutes);
+
+const userRoutes = require('./routes/userRoutes');
+app.use('/api/users',userRoutes );
 
 
 

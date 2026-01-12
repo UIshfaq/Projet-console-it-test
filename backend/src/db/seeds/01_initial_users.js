@@ -25,9 +25,9 @@ exports.seed = async function(knex) {
     const passwordHash = await bcrypt.hash('Password123!', 10);
 
     await knex('users').insert([
-        { nom: 'Sohail Tech', email: 'tech1@example.com', password_hash: passwordHash, role: 'technicien' }, // ID 1
-        { nom: 'Autre Tech', email: 'tech2@example.com', password_hash: passwordHash, role: 'technicien' },  // ID 2
-        { nom: 'Stagiaire', email: 'tech3@example.com', password_hash: passwordHash, role: 'technicien' }    // ID 3
+        { nom: 'Sohail Tech', email: 'tech1@example.com', password_hash: passwordHash, role: 'technicien' ,phone_number : "+33123456789"}, // ID 1
+        { nom: 'Autre Tech', email: 'tech2@example.com', password_hash: passwordHash, role: 'technicien' ,phone_number: "+33687654321"},  // ID 2
+        { nom: 'Stagiaire', email: 'tech3@example.com', password_hash: passwordHash, role: 'technicien' ,phone_number: "+33953741235"}    // ID 3
     ]);
 
 
@@ -65,7 +65,7 @@ exports.seed = async function(knex) {
             description: 'Client VIP. Attention au parquet fragile.',
             nomClient: "Mme. Dupont",
             rapport: null,
-            notes_technicien: null
+            notes_technicien: null,
         },
         // ID 2 : DÉJÀ TERMINÉ
         {
@@ -78,7 +78,7 @@ exports.seed = async function(knex) {
             description: 'Le client se plaint de lenteurs en Wi-Fi.',
             nomClient: "Société TechStart",
             rapport: "Remplacement du routeur effectué.",
-            notes_technicien: "Routeur défectueux remplacé."
+            notes_technicien: "Routeur défectueux remplacé.",
         },
         // ID 3 : PRÉVU DEMAIN
         {
@@ -91,7 +91,7 @@ exports.seed = async function(knex) {
             description: 'Maintenance annuelle contractuelle.',
             nomClient: "La Défense Gestion",
             rapport: null,
-            notes_technicien: null
+            notes_technicien: null,
         },
         // ID 4 : AUTRE TECH
         {
@@ -104,7 +104,7 @@ exports.seed = async function(knex) {
             description: 'Tu ne devrais pas voir cette ligne.',
             nomClient: "Inconnu",
             rapport: null,
-            notes_technicien: null
+            notes_technicien: null,
         },
         // ID 5 : SEMAINE PROCHAINE
         {
@@ -118,6 +118,7 @@ exports.seed = async function(knex) {
             nomClient: "Entreprise SécuriTech",
             rapport: null,
             notes_technicien: null
+
         },
         // ID 6 : ECHEC
         {
