@@ -1,21 +1,42 @@
-import React, { useContext } from "react";
+import React, {useContext, useEffect, useState} from "react";
 import { StyleSheet, Text, View, TouchableOpacity, SafeAreaView, ScrollView, Alert } from "react-native";
 import { AuthContext } from "../../contextes/AuthContext";
 import { Ionicons } from '@expo/vector-icons';
+import axios from "axios";
+
+
 
 function ProfileScreen() {
     const { logout } = useContext(AuthContext);
+    const { userToken } = useContext(AuthContext);
+    const [profileData, setProfileData] = useState()
 
-    const handleLogout = () => {
-        Alert.alert(
-            "Déconnexion",
-            "Êtes-vous sûr de vouloir vous déconnecter ?",
-            [
-                { text: "Annuler", style: "cancel" },
-                { text: "Déconnexion", style: "destructive", onPress: logout }
-            ]
-        );
-    };
+
+    const fetchProfile = async () => {
+
+        try {
+            const backendUrl = `${process.env.EXPO_PUBLIC_API_URL}/api/users/me`;
+            const response = await axios.get(backendUrl, {
+                headers: {
+                    Authorization: `Bearer ${userToken}`
+                }
+            });
+            setProfileData(response.data);
+        } catch (error) {
+            console.error("Erreur API :", error);
+            Alert.alert("Erreur", "Impossible de charger le profil.");
+        }
+
+
+    }
+
+
+
+    useEffect(() => {
+        if (userToken) {
+            fetchProfile();
+        }
+    }, [userToken]);
 
     return (
         <SafeAreaView style={styles.container}>
@@ -30,8 +51,8 @@ function ProfileScreen() {
 
                 <View style={styles.section}>
                     <Text style={styles.sectionTitle}>MON COMPTE</Text>
-                    <ProfileOption icon="mail-outline" label="E-mail" value="tech@console-it.com" />
-                    <ProfileOption icon="call-outline" label="Téléphone" value="+33 6 00 00 00 00" />
+                    <ProfileOption icon="mail-outline" label="E-mail" value={profileData?.email ?? "—"} />
+                    <ProfileOption icon="call-outline" label="Téléphone" value={profileData?.phone_number ?? "+33 6 00 00 00 00"} />
                     <ProfileOption icon="lock-closed-outline" label="Sécurité" value="Modifier le mot de passe" />
                 </View>
 
@@ -42,7 +63,7 @@ function ProfileScreen() {
                     <ProfileOption icon="language-outline" label="Langue" value="Français" />
                 </View>
 
-                <TouchableOpacity style={styles.logoutBtn} onPress={handleLogout}>
+                <TouchableOpacity style={styles.logoutBtn} onPress={logout}>
                     <Ionicons name="log-out-outline" size={24} color="#FF5252" />
                     <Text style={styles.logoutText}>Se déconnecter</Text>
                 </TouchableOpacity>
