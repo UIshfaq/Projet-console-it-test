@@ -1,8 +1,9 @@
-import React, { useContext, useState, useEffect } from "react";
+import React, {useContext, useState, useEffect, useCallback} from "react";
 import { View, Text, FlatList, StyleSheet, SafeAreaView, TouchableOpacity, ActivityIndicator } from "react-native";
 import axios from "axios";
 import { AuthContext } from "../../contextes/AuthContext";
 import { Ionicons } from "@expo/vector-icons";
+import {useFocusEffect} from "@react-navigation/native";
 
 function ArchiverScreen() {
     const { userToken } = useContext(AuthContext);
@@ -19,16 +20,19 @@ function ArchiverScreen() {
             });
             setInterventions(response.data);
             setIsLoading(false);
+
+            console.log(interventions)
         } catch (error) {
             console.error("Erreur API :", error);
             setIsLoading(false);
         }
     }
 
-    useEffect(() => {
-        AfficherInterventionsArchivees();
-    }, [userToken]);
-
+    useFocusEffect(
+        useCallback(() => {
+            AfficherInterventionsArchivees();
+        }, [userToken])
+    );
     const renderInterventionCard = ({ item }) => {
         const date = item.date || item.date_debut;
         const formattedDate = date ? new Date(date).toLocaleDateString('fr-FR', {

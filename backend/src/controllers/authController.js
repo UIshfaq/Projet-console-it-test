@@ -17,7 +17,7 @@ const register = async (req, res) => {
             return res.status(409).json({ message: 'Cet email est déjà utilisé.' });
         }
 
-         const salt = await bcrypt.genSalt(10);
+        const salt = await bcrypt.genSalt(10);
         const passwordHash = await bcrypt.hash(password, salt);
 
         await db('users').insert({

@@ -66,7 +66,7 @@ function DetailScreen({ route, navigation }) {
         fetchMaterials(); // On peut lancer les deux en même temps ici
     }, []);
 
-    console.log(materials);
+   // console.log(materials);
 
     if (loading) {
         return (
