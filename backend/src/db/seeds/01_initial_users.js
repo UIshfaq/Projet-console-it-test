@@ -27,7 +27,9 @@ exports.seed = async function(knex) {
     await knex('users').insert([
         { nom: 'Sohail Tech', email: 'tech1@example.com', password_hash: passwordHash, role: 'technicien' ,phone_number : "+33123456789"}, // ID 1
         { nom: 'Autre Tech', email: 'tech2@example.com', password_hash: passwordHash, role: 'technicien' ,phone_number: "+33687654321"},  // ID 2
-        { nom: 'Stagiaire', email: 'tech3@example.com', password_hash: passwordHash, role: 'technicien' ,phone_number: "+33953741235"}    // ID 3
+        { nom: 'Stagiaire', email: 'tech3@example.com', password_hash: passwordHash, role: 'technicien' ,phone_number: "+33953741235"},    // ID 3
+        //admin user
+        { nom: 'Admin User', email: 'admin1@example.com', password_hash: passwordHash, role: 'admin' ,phone_number: "+33111222333"}    // ID 4
     ]);
 
 
