@@ -1,7 +1,19 @@
 const db = require("../db-connection");
 
-
 const getAllInterventions = async (req, res) => {
+    try {
+        const interventions = await db('interventions')
+            .orderBy('date', 'asc');
+
+        res.status(200).json(interventions);
+    }
+    catch (e) {
+        console.error("Erreur lors de la récupération des interventions:", e);
+        res.status(500).json({ message: "Erreur serveur" });
+    }
+}
+
+const getAllInterventionsNonTermine = async (req, res) => {
     try {
 
         const technicienIdConnecte = req.userId;
@@ -190,8 +202,11 @@ const modifierNotes = async (req, res) => {
     }
 }
 
+
+
 module.exports = {
     getAllInterventions,
+    getAllInterventionsNonTermine,
     getAllInterventionsArchived,
     getInterventionById,
     terminerIntervention,

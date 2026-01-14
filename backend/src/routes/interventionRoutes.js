@@ -5,7 +5,9 @@ const interventionController = require('../controllers/interventionController');
 
 router.use(verifyToken);
 
-router.get('/',interventionController.getAllInterventions );
+router.get('/',interventionController.getAllInterventionsNonTermine );
+
+router.get('/all', interventionController.getAllInterventions );
 
 router.get('/archived', interventionController.getAllInterventionsArchived );
 

@@ -5,7 +5,7 @@ import PrivateRoutes from "./components/PrivateRoutes.tsx";
 import Layout from "./components/Layout.tsx";
 import Techniciens from "./pages/technicien/Techniciens.tsx";
 import Materiel from "./pages/materiels/Materiel.tsx";
-
+import Interventions from "./pages/Interventions/Interventions.tsx";
 
 function App() {
     return (
@@ -19,6 +19,7 @@ function App() {
                         <Route path="/dashboard" element={<Dashboard />} />
                         <Route path="/techniciens" element={<Techniciens />} />
                         <Route path="/materiels" element={<Materiel />} />
+                        <Route path="/interventions" element= { <Interventions />} />
                     </Route>
                 </Route>
                 <Route path="*" element={<h1>404</h1>} />
