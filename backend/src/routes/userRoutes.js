@@ -7,4 +7,6 @@ router.use(verifyToken);
 
 router.get('/me',userController.getProfil);
 
+router.get('/all',userController.getAllUsers);
+
 module.exports = router;
