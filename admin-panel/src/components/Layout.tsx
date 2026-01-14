@@ -23,6 +23,7 @@ const Layout = () => {
                     <Link to="/dashboard" className="menu-item">📊 Dashboard</Link>
                     <Link to="/techniciens" className="menu-item">👨‍🔧 Techniciens</Link>
                     <Link to="/interventions" className="menu-item">🛠️ Interventions</Link>
+                    <Link to="/materiels" className="menu-item">💻 Matériels</Link>
                 </nav>
 
                 <div className="sidebar-footer">
