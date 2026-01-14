@@ -1,6 +1,6 @@
-import {useState} from "react";
+import {useEffect, useState} from "react";
 import axios from "axios";
-import type {LoginResponse} from '../../types/auth.ts';
+import type {LoginResponse} from '../../types/AuthType.ts';
 import { useNavigate } from "react-router-dom";
 
 
@@ -9,6 +9,14 @@ function Login() {
     const [password, setPassword] = useState('');
     const [error, setError] = useState('');
     const navigate = useNavigate();
+
+    useEffect(() => {
+        const token = localStorage.getItem('adminToken');
+        if (token) {
+            // Si le token existe, on ne laisse pas l'utilisateur ici, on le vire vers le Dashboard
+            navigate('/dashboard');
+        }
+    }, [navigate]);
 
     const handleLogin = async (e: React.FormEvent) => {
         e.preventDefault();

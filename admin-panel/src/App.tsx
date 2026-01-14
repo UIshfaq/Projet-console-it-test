@@ -1,16 +1,23 @@
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import Login from "./pages/auth/Login.tsx";
 import Dashboard from "./pages/dashboard/Dashboard";
+import PrivateRoutes from "./components/PrivateRoutes.tsx";
+import Layout from "./components/Layout.tsx";
 
 
 function App() {
     return (
         <Router>
             <Routes>
-                {/* Route Connexion */}
                 <Route path="/" element={<Login />} />
-                <Route path="/dashboard" element={<Dashboard />} />
-                <Route path="*" element={<h1>Erreur 404 : Page introuvable</h1>} />
+                <Route element={<PrivateRoutes />}>
+                    {/* 2. Si oui, on affiche le Layout (Menu + Contenu) */}
+                    <Route element={<Layout />}>
+                        {/* 3. Et dedans, on met nos pages */}
+                        <Route path="/dashboard" element={<Dashboard />} />
+                    </Route>
+                </Route>
+                <Route path="*" element={<h1>404</h1>} />
             </Routes>
         </Router>
     )
