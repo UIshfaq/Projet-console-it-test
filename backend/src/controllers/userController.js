@@ -25,7 +25,7 @@ const getProfil = async (req, res) => {
 const getAllUsers = async (req, res) => {
     try {
         const users = await db('users')
-            .select('id', 'nom', 'email', 'phone_number', 'created_at');
+            .select('id', 'nom', 'email','role', 'phone_number', 'created_at');
         res.status(200).json(users);
     }
     catch (e) {

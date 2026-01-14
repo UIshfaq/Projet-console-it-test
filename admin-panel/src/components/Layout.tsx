@@ -1,5 +1,5 @@
 import { Outlet, Link, useNavigate } from 'react-router-dom';
-import './Layout.css'; 
+import './Layout.css';
 
 const Layout = () => {
     const navigate = useNavigate();
@@ -21,7 +21,7 @@ const Layout = () => {
 
                 <nav className="sidebar-menu">
                     <Link to="/dashboard" className="menu-item">📊 Dashboard</Link>
-                    <Link to="/technicians" className="menu-item">👨‍🔧 Techniciens</Link>
+                    <Link to="/techniciens" className="menu-item">👨‍🔧 Techniciens</Link>
                     <Link to="/interventions" className="menu-item">🛠️ Interventions</Link>
                 </nav>
 

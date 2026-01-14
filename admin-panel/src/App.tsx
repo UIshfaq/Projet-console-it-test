@@ -3,6 +3,7 @@ import Login from "./pages/auth/Login.tsx";
 import Dashboard from "./pages/dashboard/Dashboard";
 import PrivateRoutes from "./components/PrivateRoutes.tsx";
 import Layout from "./components/Layout.tsx";
+import Techniciens from "./pages/dashboard/Techniciens.tsx";
 
 
 function App() {
@@ -15,6 +16,7 @@ function App() {
                     <Route element={<Layout />}>
                         {/* 3. Et dedans, on met nos pages */}
                         <Route path="/dashboard" element={<Dashboard />} />
+                        <Route path="/techniciens" element={<Techniciens />} />
                     </Route>
                 </Route>
                 <Route path="*" element={<h1>404</h1>} />
