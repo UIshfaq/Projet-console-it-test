@@ -3,7 +3,7 @@ import Login from "./pages/auth/Login.tsx";
 import Dashboard from "./pages/dashboard/Dashboard";
 import PrivateRoutes from "./components/PrivateRoutes.tsx";
 import Layout from "./components/Layout.tsx";
-import Techniciens from "./pages/dashboard/Techniciens.tsx";
+import Techniciens from "./pages/technicien/Techniciens.tsx";
 
 
 function App() {

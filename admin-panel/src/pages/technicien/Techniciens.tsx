@@ -21,11 +21,9 @@ function techniciens () {
                 }
             });
             const techsOnly = response.data.filter((user: User) => user.role === 'technicien');
-
             setTechnicians(techsOnly);
             setLoading(false);
 
-            console.log('Fetched technicians:', techsOnly);
         }
         catch (e){
             setError('Failed to fetch technicians.');
