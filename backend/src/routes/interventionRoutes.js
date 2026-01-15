@@ -2,12 +2,13 @@ const express = require('express');
 const router = express.Router();
 const verifyToken = require('../middlewares/authMiddleware');
 const interventionController = require('../controllers/interventionController');
+const isAdmin = require('../middlewares/IsAdmin');
 
 router.use(verifyToken);
 
 router.get('/',interventionController.getAllInterventionsNonTermine );
 
-router.get('/all', interventionController.getAllInterventions );
+router.get('/all',isAdmin ,interventionController.getAllInterventions );
 
 router.get('/archived', interventionController.getAllInterventionsArchived );
 
