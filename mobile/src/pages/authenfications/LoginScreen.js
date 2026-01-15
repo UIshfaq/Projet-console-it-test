@@ -167,22 +167,12 @@ const LoginScreen = ({ navigation }) => {
                                 />
                                 <Text style={styles.checkboxText}>Remember info</Text>
                             </TouchableOpacity>
-                            <TouchableOpacity>
-                                <Text style={styles.forgotPassword}>Forgot Password</Text>
-                            </TouchableOpacity>
                         </View>
 
                         <TouchableOpacity style={styles.button} onPress={handleLogin}>
                             <Text style={styles.buttonText}>Log In</Text>
                         </TouchableOpacity>
 
-                        <TouchableOpacity
-                            style={styles.linkTextContainer}
-                            onPress={() => navigation.navigate('SignUp')}>
-                            <Text style={styles.linkText}>
-                                First time here? <Text style={styles.linkTextBold}>Sign up for free</Text>
-                            </Text>
-                        </TouchableOpacity>
                     </View>
                 </ScrollView>
 

@@ -6,7 +6,6 @@ import { AuthContext, AuthProvider } from "./src/contextes/AuthContext";
 import { Ionicons } from '@expo/vector-icons';
 
 import LoginScreen from "./src/pages/authenfications/LoginScreen";
-import SignUpScreen from "./src/pages/authenfications/SignUpScreen";
 
 import HomeScreen from "./src/pages/HomeScreen";
 
@@ -26,7 +25,6 @@ const Tab = createBottomTabNavigator();
 const AuthNavigator = () => (
     <Stack.Navigator screenOptions={{ headerShown: false }}>
         <Stack.Screen name="Login" component={LoginScreen} />
-        <Stack.Screen name="SignUp" component={SignUpScreen} />
     </Stack.Navigator>
 );
 

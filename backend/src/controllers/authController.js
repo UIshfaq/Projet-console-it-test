@@ -3,11 +3,11 @@ const jwt = require("jsonwebtoken");
 const db = require('../db-connection'); // Notre connexion BDD
 
 
-const register = async (req, res) => {
+const addUser = async (req, res) => {
     try {
-        const { nom, email, password } = req.body;
+        const { nom, email, password , role ,phone_number } = req.body;
 
-        if (!nom || !email || !password) {
+        if (!nom || !email || !password || !phone_number || !role) {
             return res.status(400).json({ message: 'Veuillez remplir tous les champs.' });
         }
 
@@ -24,7 +24,8 @@ const register = async (req, res) => {
             nom: nom,
             email: email,
             password_hash: passwordHash,
-            role: 'technicien'
+            role: role || 'technician'
+            ,phone_number:phone_number
         });
 
         res.status(201).json({ message: 'Utilisateur créé avec succès !' });
@@ -91,6 +92,6 @@ const login = async (req, res) => {
 }
 
 module.exports = {
-    register,
+    addUser,
     login,
 };
