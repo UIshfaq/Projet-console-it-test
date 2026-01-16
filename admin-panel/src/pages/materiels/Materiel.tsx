@@ -17,7 +17,7 @@ function Materiel() {
             });
             setMateriel(response.data);
             setLoading(false);
-            console.log(response.data)
+
         } catch (e) {
             setError('Failed to fetch materiel.');
             console.error('Fetch materiel error:', e);
