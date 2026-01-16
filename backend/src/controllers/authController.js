@@ -24,8 +24,9 @@ const addUser = async (req, res) => {
             nom: nom,
             email: email,
             password_hash: passwordHash,
-            role: role || 'technician'
-            ,phone_number:phone_number
+            role: role || 'technician',
+            phone_number:phone_number,
+            isActive: true
         });
 
         res.status(201).json({ message: 'Utilisateur créé avec succès !' });
@@ -45,7 +46,7 @@ const login = async (req, res) => {
         }
 
         const user = await db('users')
-            .where({email: email})
+            .where({email: email , isActive: true})
             .select('id', 'nom', 'email', 'role', 'password_hash')
             .first();
 
