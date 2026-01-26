@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const inventairesController = require('../controllers/inventairesController');
 const verifyToken = require("../middlewares/authMiddleware");
+const isAdmin = require("../middlewares/IsAdmin");
 
 router.use(verifyToken);
 

@@ -8,6 +8,8 @@ router.use(verifyToken);
 
 router.get('/',interventionController.getAllInterventionsNonTermine );
 
+router.post('/addInterv', interventionController.addIntervention );
+
 router.get('/all',isAdmin ,interventionController.getAllInterventions );
 
 router.get('/archived', interventionController.getAllInterventionsArchived );

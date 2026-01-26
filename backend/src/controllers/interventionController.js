@@ -13,6 +13,57 @@ const getAllInterventions = async (req, res) => {
     }
 }
 
+const addIntervention = async (req, res) => {
+    const { interventionData, materials } = req.body;
+
+    try {
+        await db.transaction(async (trx) => {
+
+            // 1. Création de l'intervention
+            const [newInterventionId] = await trx('interventions')
+                .insert({
+                    titre: interventionData.titre,
+                    adresse: interventionData.adresse,
+                    date: interventionData.date,
+                    statut: 'prévu',
+                    technicien_id: interventionData.technicien_id,
+                    description: interventionData.description,
+                    nomClient: interventionData.nomClient
+                });
+
+            // 2. Gestion du matériel et du stock
+            if (materials && materials.length > 0) {
+
+                // Préparation des données pour la table de liaison
+                const materialsToInsert = materials.map(item => ({
+                    intervention_id: newInterventionId,
+                    material_id: item.id,
+                    quantity_required: item.quantity,
+                    to_bring: 1,
+                    is_checked: 0
+                }));
+
+                // Insertion dans la table de liaison
+                await trx('intervention_materials').insert(materialsToInsert);
+
+                // 3. MISE À JOUR DU STOCK
+                // On boucle sur chaque matériel pour réduire la quantité en stock
+                for (const item of materials) {
+                    await trx('materials')
+                        .where('id', item.id)
+                        .decrement('stock_quantity', item.quantity); // Soustrait la quantité
+                }
+            }
+        });
+
+        res.status(201).json({ message: "Intervention créée et stock mis à jour !" });
+
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: "Erreur lors de la création." });
+    }
+}
+
 const getAllInterventionsNonTermine = async (req, res) => {
     try {
 
@@ -211,5 +262,6 @@ module.exports = {
     getInterventionById,
     terminerIntervention,
     archiverIntervention,
-    modifierNotes
+    modifierNotes,
+    addIntervention
 }
