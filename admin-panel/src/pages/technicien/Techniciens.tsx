@@ -22,6 +22,8 @@ function techniciens() {
 
     const fetchTechnicians = async () => {
 
+
+
         try {
             const backendUrl = "http://localhost:3000/api/users/all";
             const response = await axios(backendUrl, {
@@ -36,6 +38,22 @@ function techniciens() {
         } catch (e) {
             setError('Failed to fetch technicians.');
             console.error('Fetch technicians error:', e);
+        }
+    };
+
+    const handleDelete = async (id: number) => {
+
+        const confirmation = window.confirm("Voulez-vous vraiment désactiver ce compte ?");
+        if (!confirmation) return;
+        try {
+            await axios.delete(`http://localhost:3000/api/users/${id}`, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+
+            alert("Technicien désactivé !");
+            fetchTechnicians();
+        } catch (err) {
+            console.error("Erreur suppression:", err);
         }
     };
 
@@ -96,7 +114,13 @@ function techniciens() {
                             </td>
                             <td style={{textAlign: 'right'}}>
                                 <button className="btn-icon edit" title="Modifier">✏️</button>
-                                <button className="btn-icon delete" title="Supprimer">🗑️</button>
+                                <button
+                                    className="btn-icon delete"
+                                    title="Supprimer"
+                                    onClick={() => handleDelete(tech.id)}
+                                >
+                                    🗑️
+                                </button>
                             </td>
                         </tr>
                     ))}
@@ -152,6 +176,9 @@ function techniciens() {
                         </div>
                     </div>
                 )}
+
+
+
 
                 {technicians.length === 0 && (
                     <div className="empty-state">Aucun technicien trouvé.</div>
