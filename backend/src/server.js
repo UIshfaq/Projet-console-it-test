@@ -24,6 +24,9 @@ app.use('/api/inventaires', inventairesRoutes);
 const userRoutes = require('./routes/userRoutes');
 app.use('/api/users',userRoutes );
 
+const dashboardAdminRoutes = require('./routes/dashboardAdminRoute');
+app.use('/api/dashboard/admin', dashboardAdminRoutes);
+
 
 
 // --- Démarrage du serveur ---
