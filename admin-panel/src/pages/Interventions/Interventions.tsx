@@ -38,7 +38,6 @@ function Interventions() {
             });
             setLoading(false);
             setTechnicians(response.data);
-            console.log('Technicians fetched:', response.data);
         }
         catch (e) {
             setError('Failed to fetch technicians.');
