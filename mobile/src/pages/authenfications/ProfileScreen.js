@@ -74,6 +74,7 @@ function ProfileScreen() {
     );
 }
 
+
 const ProfileOption = ({ icon, label, value }) => (
     <TouchableOpacity style={styles.optionRow}>
         <View style={styles.optionIconBox}>
