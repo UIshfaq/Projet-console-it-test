@@ -117,21 +117,44 @@ const getInterventionById = async (req, res) => {
     const technicienIdConnecte = req.userId;
 
     try {
-        const interventionById = await db('interventions')
-            .join('intervention_technicians', 'interventions.id', 'intervention_technicians.intervention_id')
-            .where({
-                'interventions.id': intervId,
-                'intervention_technicians.technician_id': technicienIdConnecte
+        const interventionData = await db('interventions')
+            .leftJoin('intervention_technicians', 'interventions.id', 'intervention_technicians.intervention_id')
+            .leftJoin('users', 'intervention_technicians.technician_id', 'users.id')
+            .where('interventions.id', intervId)
+            .whereIn('interventions.id', function() {
+                this.select('intervention_id')
+                    .from('intervention_technicians')
+                    .where('technician_id', technicienIdConnecte);
             })
-            .select('interventions.*')
+            .select(
+                'interventions.*',
+                db.raw('GROUP_CONCAT(users.nom SEPARATOR ", ") as equipe')
+            )
+            .groupBy('interventions.id')
             .first();
 
-        if (!interventionById) {
+        if (!interventionData) {
             return res.status(404).json({ message: "L'intervention est introuvable ou vous n'y êtes pas assigné" });
         }
 
-        res.status(200).json(interventionById);
+        // Récupération du matériel lié
+        const materials = await db('intervention_materials')
+            .join('materials', 'intervention_materials.material_id', 'materials.id')
+            .where('intervention_materials.intervention_id', intervId)
+            .select(
+                'materials.name',
+                'intervention_materials.quantity_required',
+                'intervention_materials.is_checked',
+                'intervention_materials.to_bring'
+            );
+
+        // On fusionne les données de l'intervention et le tableau de matériels
+        res.status(200).json({
+            ...interventionData, // Utilise bien le même nom de variable ici
+            materials: materials
+        });
     } catch (e) {
+        console.error("Erreur getInterventionById:", e);
         res.status(500).json({ message: "Erreur serveur" });
     }
 }

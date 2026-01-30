@@ -35,6 +35,12 @@ function DetailScreen({ route, navigation }) {
             });
             const data = response.data;
             setDetailIntervention(data);
+
+
+            if (data.materials && Array.isArray(data.materials)) {
+                setMaterials(data.materials);
+            }
+
             if (data.rapport) setRapport(data.rapport);
             if (data.notes_technicien) setNotesTechnicien(data.notes_technicien);
         } catch (e) {
@@ -60,13 +66,16 @@ function DetailScreen({ route, navigation }) {
         }
     };
 
+
+
     // --- 3. LES USE EFFECTS (Toujours avant les returns !) ---
     useEffect(() => {
         chargerDescription();
         fetchMaterials(); // On peut lancer les deux en même temps ici
     }, []);
 
-   // console.log(materials);
+
+
 
     if (loading) {
         return (
@@ -347,6 +356,7 @@ function DetailScreen({ route, navigation }) {
                         <InfoRow icon="person" label="Client" value={detailIntervention.nomClient || detailIntervention.client || "Client inconnu"} />
                         <InfoRow icon="location" label="Adresse" value={detailIntervention.adresse || "Non spécifiée"} isAddress onPress={ouvrirGPS} />
                         <InfoRow icon="information-circle" label="Description" value={detailIntervention.description || "Aucune description fournie"} />
+                        <InfoRow icon="person-circle" label="Assigné à" value={detailIntervention.equipe || "Mission a faire seule"} />
                     </View>
 
 
