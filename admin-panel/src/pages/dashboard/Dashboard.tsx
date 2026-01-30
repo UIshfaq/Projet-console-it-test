@@ -16,6 +16,7 @@ function Dashboard () {
                 },
             });
             setInterventions(response.data);
+            console.log("Today's interventions:", response.data);
         } catch (error) {
             console.error("Error fetching today's interventions:", error);
         }
@@ -48,7 +49,7 @@ function Dashboard () {
                                         <div className="titre-inter">{inter.titre}</div>
                                         <div className="client-name text-small">👤 {inter.nomClient}</div>
                                     </td>
-                                    <td className="tech-name">{inter.nomTechnicien || 'Non assigné'}</td>
+                                    <td className="tech-name">{inter.nomsTechniciens || 'Non assigné'}</td>
                                     <td className="adresse-text">{inter.adresse}</td>
                                     <td>
                                         <span className="badge badge-today">Aujourd'hui</span>
