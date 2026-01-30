@@ -8,10 +8,16 @@ const getIntervToday = async (req, res) => {
                 'interventions.titre',
                 'interventions.adresse',
                 'interventions.nomClient',
-                'technicien.nom as nomTechnicien'
+                'interventions.statut',
+                // On récupère tous les noms séparés par des virgules
+                db.raw('GROUP_CONCAT(technicien.nom SEPARATOR ", ") as nomsTechniciens')
             )
-            .leftJoin('users as technicien', 'interventions.technicien_id', 'technicien.id')
-            .whereRaw('DATE(interventions.date) = CURRENT_DATE');
+            // On joint la nouvelle table de liaison
+            .leftJoin('intervention_technicians', 'interventions.id', 'intervention_technicians.intervention_id')
+            // On joint la table users pour avoir les noms
+            .leftJoin('users as technicien', 'intervention_technicians.technician_id', 'technicien.id')
+            .whereRaw('DATE(interventions.date) = CURRENT_DATE')
+            .groupBy('interventions.id'); // Crucial pour ne pas avoir de doublons [cite: 2026-01-26]
 
         res.status(200).json(interventions);
     } catch (e) {
