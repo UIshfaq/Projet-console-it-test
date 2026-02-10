@@ -16,7 +16,6 @@ function Dashboard () {
                 },
             });
             setInterventions(response.data);
-            console.log("Today's interventions:", response.data);
         } catch (error) {
             console.error("Error fetching today's interventions:", error);
         }

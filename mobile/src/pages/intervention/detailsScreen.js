@@ -1,18 +1,17 @@
-import React, { useContext, useEffect, useState } from 'react';
+import React, {useContext, useEffect, useState} from 'react';
 import {
     View, Text, ActivityIndicator, StyleSheet, ScrollView, SafeAreaView, TouchableOpacity, Linking, Platform,
     TextInput, Alert, Modal, StatusBar, KeyboardAvoidingView
 } from "react-native";
 import axios from "axios";
-import { AuthContext } from "../../contextes/AuthContext";
-import { Ionicons } from '@expo/vector-icons';
+import {AuthContext} from "../../contextes/AuthContext";
+import {Ionicons} from '@expo/vector-icons';
 import SignatureScreen from "react-native-signature-canvas";
 
-function DetailScreen({ route, navigation }) {
-    const { interventionId } = route.params;
-    const { userToken } = useContext(AuthContext);
+function DetailScreen({route, navigation}) {
+    const {interventionId} = route.params;
+    const {userToken} = useContext(AuthContext);
 
-    // --- 1. TOUS LES STATES EN PREMIER ---
     const [detailIntervention, setDetailIntervention] = useState(null);
     const [loading, setLoading] = useState(true);
     const [notesTechnicien, setNotesTechnicien] = useState('');
@@ -26,17 +25,16 @@ function DetailScreen({ route, navigation }) {
     const [materials, setMaterials] = useState([]);
     const [isLoadingMaterials, setIsLoadingMaterials] = useState(true);
 
-    // --- 2. LES FONCTIONS ---
     const chargerDescription = async () => {
         const backendUrl = `${process.env.EXPO_PUBLIC_API_URL}/api/interventions/${interventionId}`;
         try {
             const response = await axios.get(backendUrl, {
-                headers: { Authorization: `Bearer ${userToken}` }
+                headers: {Authorization: `Bearer ${userToken}`}
             });
             const data = response.data;
             setDetailIntervention(data);
 
-
+            // --- AJOUT : On récupère les matériaux ici ---
             if (data.materials && Array.isArray(data.materials)) {
                 setMaterials(data.materials);
             }
@@ -47,19 +45,18 @@ function DetailScreen({ route, navigation }) {
             console.error("Erreur API Détails :", e);
         } finally {
             setLoading(false);
+            setIsLoadingMaterials(false); // On arrête le chargement ici [cite: 2026-01-30]
         }
     };
-
     const fetchMaterials = async () => {
 
         const backendUrl = `${process.env.EXPO_PUBLIC_API_URL}/api/inventaires/${interventionId}/materials`;
         try {
             const response = await axios.get(backendUrl, {
-                headers: { Authorization: `Bearer ${userToken}` }
+                headers: {Authorization: `Bearer ${userToken}`}
             });
             setMaterials(response.data);
-        }
-        catch (e) {
+        } catch (e) {
             console.error("Erreur récupération matériaux :", e);
         } finally {
             setIsLoadingMaterials(false);
@@ -68,19 +65,16 @@ function DetailScreen({ route, navigation }) {
 
 
 
-    // --- 3. LES USE EFFECTS (Toujours avant les returns !) ---
     useEffect(() => {
         chargerDescription();
-        fetchMaterials(); // On peut lancer les deux en même temps ici
+        fetchMaterials();
     }, []);
-
-
 
 
     if (loading) {
         return (
             <View style={styles.loadingContainer}>
-                <ActivityIndicator size="large" color="#6A5AE0" />
+                <ActivityIndicator size="large" color="#6A5AE0"/>
                 <Text style={styles.loadingText}>Chargement des détails...</Text>
             </View>
         );
@@ -89,12 +83,11 @@ function DetailScreen({ route, navigation }) {
     if (!detailIntervention) {
         return (
             <View style={styles.loadingContainer}>
-                <Ionicons name="alert-circle-outline" size={48} color="#FF5252" />
+                <Ionicons name="alert-circle-outline" size={48} color="#FF5252"/>
                 <Text style={styles.errorText}>Impossible de charger les données.</Text>
             </View>
         );
     }
-
 
 
     const isFinalStatus = ['archiver', 'termine', 'echec'].includes(detailIntervention.statut);
@@ -108,7 +101,7 @@ function DetailScreen({ route, navigation }) {
                 rapport: rapport,
                 notes_technicien: notesTechnicien,
             }, {
-                headers: { Authorization: `Bearer ${userToken}` }
+                headers: {Authorization: `Bearer ${userToken}`}
             });
             setDetailIntervention(prev => ({
                 ...prev,
@@ -123,7 +116,6 @@ function DetailScreen({ route, navigation }) {
         }
     };
     const cloturerInterv = async (finalStatut, signatureDirecte = null) => {
-        console.log("👉 Tentative clôture :", finalStatut);
 
         // 1. Vérif Rapport
         if (!rapport || rapport.trim() === '') {
@@ -150,7 +142,6 @@ function DetailScreen({ route, navigation }) {
 
             // SI PAS DE SIGNATURE : ON DOIT OUVRIR LA FENÊTRE
             if (!finalSignature) {
-                console.log("🛑 Pas de signature -> On lance la procédure d'ouverture");
 
                 // A. On ferme la modale de choix "Succès/Echec"
                 setIsClotureModalVisible(false);
@@ -168,17 +159,24 @@ function DetailScreen({ route, navigation }) {
         // 4. SI ON ARRIVE ICI : C'est qu'on a la signature (ou que c'est un échec)
         // -> ON ENVOIE TOUT AU BACKEND
         try {
-            console.log("🚀 Envoi au serveur avec signature :", finalSignature ? "OUI" : "NON");
 
             const backendUrl = `${process.env.EXPO_PUBLIC_API_URL}/api/interventions/${interventionId}`;
 
-            await axios.put(backendUrl, {
+            // 💡 CORRECTION ICI : On prépare les données de base
+            const dataToSend = {
                 statut: finalStatut,
                 notes_technicien: notesTechnicien,
                 rapport: rapport,
-                failure_reason: failureReasonToSend,
-                signature: finalSignature // Ici ça envoie soit le dessin (Mobile), soit le texte simulé (Web)
-            }, {
+                failure_reason: failureReasonToSend, // Sera null si succès, rempli si échec
+            };
+
+            // On n'ajoute la signature que si elle existe (pour éviter d'envoyer null)
+            if (finalSignature) {
+                dataToSend.signature = finalSignature;
+            }
+
+            // On envoie l'objet propre
+            await axios.put(backendUrl, dataToSend, {
                 headers: { Authorization: `Bearer ${userToken}` }
             });
 
@@ -189,7 +187,7 @@ function DetailScreen({ route, navigation }) {
                 rapport: rapport,
                 notes_technicien: notesTechnicien,
                 failure_reason: failureReasonToSend,
-                signature: finalSignature
+                signature: finalSignature // Ici tu peux laisser, c'est juste pour l'affichage local
             }));
 
             // Nettoyage final
@@ -198,16 +196,16 @@ function DetailScreen({ route, navigation }) {
             setIsFailing(false);
             setEchecRaison('');
 
-            Alert.alert("Mission Terminée", "Intervention clôturée avec succès !", [
-                { text: "Super", onPress: () => navigation.goBack() }
+            Alert.alert("Mission Clôturée", `L'intervention est maintenant en statut : ${finalStatut}`, [
+                { text: "OK", onPress: () => navigation.goBack() }
             ]);
 
         } catch (e) {
-            console.error(e);
+            console.error("Erreur Clôture :", e);
             const msg = e.response?.data?.message || "Erreur lors de la sauvegarde.";
             Alert.alert("Erreur", msg);
         }
-    }
+    };
 
     const archiverInterv = async () => {
         if (detailIntervention?.statut === "archiver") {
@@ -219,18 +217,18 @@ function DetailScreen({ route, navigation }) {
 
             try {
                 await axios.patch(backUrl, {}, {
-                    headers: { Authorization: `Bearer ${userToken}` },
+                    headers: {Authorization: `Bearer ${userToken}`},
                     timeout: 8000
                 });
 
-                setDetailIntervention(prev => ({ ...prev, statut: 'archiver' }));
+                setDetailIntervention(prev => ({...prev, statut: 'archiver'}));
 
                 if (Platform.OS === 'web') {
                     alert("Succès : L'intervention a été archivée.");
                     navigation.goBack();
                 } else {
                     Alert.alert("Succès", "L'intervention a été archivée.", [
-                        { text: "OK", onPress: () => navigation.goBack() }
+                        {text: "OK", onPress: () => navigation.goBack()}
                     ]);
                 }
             } catch (e) {
@@ -251,8 +249,8 @@ function DetailScreen({ route, navigation }) {
                 "Confirmation",
                 "Voulez-vous vraiment archiver cette intervention ?",
                 [
-                    { text: "Annuler", style: "cancel" },
-                    { text: "Archiver", style: "destructive", onPress: proceed }
+                    {text: "Annuler", style: "cancel"},
+                    {text: "Archiver", style: "destructive", onPress: proceed}
                 ]
             );
         }
@@ -272,43 +270,54 @@ function DetailScreen({ route, navigation }) {
 
     const getStatusStyle = (status) => {
         switch (status) {
-            case 'en_cours': return { bg: '#FFF4E5', text: '#FF9800', label: 'En Cours' };
-            case 'termine': case 'terminé': return { bg: '#E8F5E9', text: '#4CAF50', label: 'Terminé' };
-            case 'prevu': case 'prévu': return { bg: '#E3F2FD', text: '#2196F3', label: 'Prévu' };
-            case 'archiver': return { bg: '#F5F5F5', text: '#9E9E9E', label: 'Archivée' };
-            case 'echec': return { bg: '#FFEBEE', text: '#F44336', label: 'Échec' };
-            default: return { bg: '#F5F5F5', text: '#9E9E9E', label: status || 'Inconnu' };
+            case 'en_cours':
+                return {bg: '#FFF4E5', text: '#FF9800', label: 'En Cours'};
+            case 'termine':
+            case 'terminé':
+                return {bg: '#E8F5E9', text: '#4CAF50', label: 'Terminé'};
+            case 'prevu':
+            case 'prévu':
+                return {bg: '#E3F2FD', text: '#2196F3', label: 'Prévu'};
+            case 'archiver':
+                return {bg: '#F5F5F5', text: '#9E9E9E', label: 'Archivée'};
+            case 'echec':
+                return {bg: '#FFEBEE', text: '#F44336', label: 'Échec'};
+            default:
+                return {bg: '#F5F5F5', text: '#9E9E9E', label: status || 'Inconnu'};
         }
     };
 
     const toBring = materials.filter(m => m.to_bring === 1 || m.to_bring === true);
     const onSite = materials.filter(m => m.to_bring === 0 || m.to_bring === false);
 
-    const toggleCheck = async (materialId, currentStatus) => {
-        const newStatus = currentStatus ? 0 : 1;
-
+    const toggleCheck = async (idDuMateriel, currentStatus) => {
+        const newStatus = !!currentStatus ? 0 : 1;
 
         const updatedMaterials = materials.map(item => {
-            if (item.material_id === materialId) {
+            const itemId = item.material_id || item.id;
+
+            if (itemId === idDuMateriel) {
                 return { ...item, is_checked: newStatus };
             }
             return item;
         });
+
         setMaterials(updatedMaterials);
 
-        const backendUrl = `${process.env.EXPO_PUBLIC_API_URL}/api/inventaires/${interventionId}/materials/${materialId}`;
+        const backendUrl = `${process.env.EXPO_PUBLIC_API_URL}/api/inventaires/${interventionId}/materials/${idDuMateriel}`;
 
         try {
             await axios.put(backendUrl, { is_checked: newStatus },
                 { headers: { Authorization: `Bearer ${userToken}` } }
             );
+            console.log("Check sauvegardé en BDD");
         }
         catch (e) {
             console.error("Erreur mise à jour check :", e);
-            setMaterials(materials)
+
+            Alert.alert("Erreur", "Impossible de valider cet objet (Problème réseau)");
         }
     }
-
     const handleSignatureOK = (signature) => {
         // 1. On sauvegarde (utile pour l'affichage si besoin)
         setSignatureData(signature);
@@ -333,18 +342,19 @@ function DetailScreen({ route, navigation }) {
     return (
         <KeyboardAvoidingView
             behavior={Platform.OS === "ios" ? "padding" : "height"}
-            style={{ flex: 1 }}
+            style={{flex: 1}}
         >
             <SafeAreaView style={styles.container}>
-                <StatusBar barStyle="dark-content" />
-                <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
+                <StatusBar barStyle="dark-content"/>
+                <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}
+                            keyboardShouldPersistTaps="handled">
 
                     {/* --- HEADER --- */}
                     <View style={styles.headerCard}>
                         <View style={styles.headerInfo}>
                             <Text style={styles.title}>{detailIntervention.titre}</Text>
-                            <View style={[styles.statusBadge, { backgroundColor: statusStyle.bg }]}>
-                                <Text style={[styles.statusText, { color: statusStyle.text }]}>{statusStyle.label}</Text>
+                            <View style={[styles.statusBadge, {backgroundColor: statusStyle.bg}]}>
+                                <Text style={[styles.statusText, {color: statusStyle.text}]}>{statusStyle.label}</Text>
                             </View>
                         </View>
                     </View>
@@ -352,11 +362,16 @@ function DetailScreen({ route, navigation }) {
                     {/* --- INFO SECTION --- */}
                     <Text style={styles.sectionTitle}>DÉTAILS DE LA MISSION</Text>
                     <View style={styles.infoGrid}>
-                        <InfoRow icon="calendar" label="Date" value={new Date(detailIntervention.date || detailIntervention.date_debut).toLocaleDateString('fr-FR', { dateStyle: 'medium' })} />
-                        <InfoRow icon="person" label="Client" value={detailIntervention.nomClient || detailIntervention.client || "Client inconnu"} />
-                        <InfoRow icon="location" label="Adresse" value={detailIntervention.adresse || "Non spécifiée"} isAddress onPress={ouvrirGPS} />
-                        <InfoRow icon="information-circle" label="Description" value={detailIntervention.description || "Aucune description fournie"} />
-                        <InfoRow icon="person-circle" label="Assigné à" value={detailIntervention.equipe || "Mission a faire seule"} />
+                        <InfoRow icon="calendar" label="Date"
+                                 value={new Date(detailIntervention.date || detailIntervention.date_debut).toLocaleDateString('fr-FR', {dateStyle: 'medium'})}/>
+                        <InfoRow icon="person" label="Client"
+                                 value={detailIntervention.nomClient || detailIntervention.client || "Client inconnu"}/>
+                        <InfoRow icon="location" label="Adresse" value={detailIntervention.adresse || "Non spécifiée"}
+                                 isAddress onPress={ouvrirGPS}/>
+                        <InfoRow icon="information-circle" label="Description"
+                                 value={detailIntervention.description || "Aucune description fournie"}/>
+                        <InfoRow icon="person-circle" label="Assigné à"
+                                 value={detailIntervention.equipe || "Mission a faire seule"}/>
                     </View>
 
 
@@ -364,7 +379,7 @@ function DetailScreen({ route, navigation }) {
                         <Text style={styles.sectionTitle}>📦 Matériel à emporter</Text>
 
                         {isLoadingMaterials ? (
-                            <ActivityIndicator color="#6A5AE0" />
+                            <ActivityIndicator color="#6A5AE0"/>
                         ) : toBring.length === 0 ? (
                             <Text style={styles.emptyText}>Aucun matériel requis pour cette intervention.</Text>
                         ) : (
@@ -372,7 +387,12 @@ function DetailScreen({ route, navigation }) {
                                 <TouchableOpacity
                                     key={index}
                                     style={styles.checkboxRow}
-                                    onPress={() => toggleCheck(item.material_id)}
+                                    onPress={() => {
+                                        // On sécurise l'ID ici aussi
+                                        console.log("🧐 À quoi ressemble un item matériel ?", toBring[0]);
+                                        const mId = item.material_id || item.id;
+                                        toggleCheck(mId, item.is_checked);
+                                    }}
                                 >
                                     {/* La Case à Cocher */}
                                     <Ionicons
@@ -398,11 +418,11 @@ function DetailScreen({ route, navigation }) {
 
                     {/* --- SECTION DÉJÀ SUR PLACE (Optionnel) --- */}
                     {onSite.length > 0 && (
-                        <View style={[styles.sectionContainer, { marginTop: 10 }]}>
+                        <View style={[styles.sectionContainer, {marginTop: 10}]}>
                             <Text style={styles.subSectionTitle}>🏠 Déjà sur place (Client)</Text>
                             {onSite.map((item, index) => (
                                 <View key={index} style={styles.readOnlyRow}>
-                                    <Ionicons name="information-circle-outline" size={20} color="#666" />
+                                    <Ionicons name="information-circle-outline" size={20} color="#666"/>
                                     <Text style={styles.readOnlyText}>
                                         {item.quantity_required}x {item.name}
                                     </Text>
@@ -413,7 +433,7 @@ function DetailScreen({ route, navigation }) {
 
                     {/* --- ACTION GPS --- */}
                     <TouchableOpacity style={styles.gpsButton} onPress={ouvrirGPS}>
-                        <Ionicons name="navigate" size={20} color="white" />
+                        <Ionicons name="navigate" size={20} color="white"/>
                         <Text style={styles.gpsButtonText}>DÉMARRER LE TRAJET (GPS)</Text>
                     </TouchableOpacity>
 
@@ -442,7 +462,7 @@ function DetailScreen({ route, navigation }) {
                         <Text style={styles.inputLabel}>Rapport de clôture (Client)</Text>
                         {isRapportModifiable ? (
                             <TextInput
-                                style={[styles.textArea, { borderColor: '#4CAF50' }]}
+                                style={[styles.textArea, {borderColor: '#4CAF50'}]}
                                 placeholder="Rédigez le rapport pour le client..."
                                 placeholderTextColor="#999"
                                 multiline
@@ -450,8 +470,9 @@ function DetailScreen({ route, navigation }) {
                                 onChangeText={setRapport}
                             />
                         ) : (
-                            <View style={[styles.readOnlyBox, { backgroundColor: '#E8F5E9' }]}>
-                                <Text style={[styles.readOnlyText, { color: '#2E7D32' }]}>{rapport || "Pas encore de rapport rédigé."}</Text>
+                            <View style={[styles.readOnlyBox, {backgroundColor: '#E8F5E9'}]}>
+                                <Text
+                                    style={[styles.readOnlyText, {color: '#2E7D32'}]}>{rapport || "Pas encore de rapport rédigé."}</Text>
                             </View>
                         )}
                     </View>
@@ -459,8 +480,8 @@ function DetailScreen({ route, navigation }) {
                     {/* --- RAISON ECHEC --- */}
                     {detailIntervention.statut === 'echec' && detailIntervention.failure_reason && (
                         <View style={styles.failureBox}>
-                            <Ionicons name="warning" size={20} color="#F44336" />
-                            <View style={{ marginLeft: 10 }}>
+                            <Ionicons name="warning" size={20} color="#F44336"/>
+                            <View style={{marginLeft: 10}}>
                                 <Text style={styles.failureTitle}>RAISON DE L'ÉCHEC</Text>
                                 <Text style={styles.failureText}>{detailIntervention.failure_reason}</Text>
                             </View>
@@ -470,29 +491,33 @@ function DetailScreen({ route, navigation }) {
                     {/* --- BUTTONS --- */}
                     <View style={styles.buttonGroup}>
                         {(canEdit || isEditingRapport) && (
-                            <TouchableOpacity style={[styles.actionButton, { backgroundColor: '#FF9800' }]} onPress={modifierRapportNotes}>
-                                <Ionicons name="cloud-upload" size={22} color="white" />
+                            <TouchableOpacity style={[styles.actionButton, {backgroundColor: '#FF9800'}]}
+                                              onPress={modifierRapportNotes}>
+                                <Ionicons name="cloud-upload" size={22} color="white"/>
                                 <Text style={styles.actionButtonText}>ENREGISTRER</Text>
                             </TouchableOpacity>
                         )}
 
                         {['en_cours', 'prevu', 'prévu'].includes(detailIntervention.statut) && canEdit && (
-                            <TouchableOpacity style={styles.actionButton} onPress={() => setIsClotureModalVisible(true)}>
-                                <Ionicons name="checkmark-done" size={22} color="white" />
+                            <TouchableOpacity style={styles.actionButton}
+                                              onPress={() => setIsClotureModalVisible(true)}>
+                                <Ionicons name="checkmark-done" size={22} color="white"/>
                                 <Text style={styles.actionButtonText}>CLÔTURER LA MISSION</Text>
                             </TouchableOpacity>
                         )}
 
                         {(['termine', 'terminé', 'echec'].includes(detailIntervention.statut)) && !isEditingRapport && (
-                            <TouchableOpacity style={[styles.actionButton, { backgroundColor: '#2196F3' }]} onPress={() => setIsEditingRapport(true)}>
-                                <Ionicons name="create" size={22} color="white" />
+                            <TouchableOpacity style={[styles.actionButton, {backgroundColor: '#2196F3'}]}
+                                              onPress={() => setIsEditingRapport(true)}>
+                                <Ionicons name="create" size={22} color="white"/>
                                 <Text style={styles.actionButtonText}>MODIFIER LE RAPPORT</Text>
                             </TouchableOpacity>
                         )}
 
                         {(['termine', 'terminé', 'echec'].includes(detailIntervention.statut)) && (
-                            <TouchableOpacity style={[styles.actionButton, { backgroundColor: '#607D8B' }]} onPress={archiverInterv}>
-                                <Ionicons name="archive" size={22} color="white" />
+                            <TouchableOpacity style={[styles.actionButton, {backgroundColor: '#607D8B'}]}
+                                              onPress={archiverInterv}>
+                                <Ionicons name="archive" size={22} color="white"/>
                                 <Text style={styles.actionButtonText}>ARCHIVER</Text>
                             </TouchableOpacity>
                         )}
@@ -500,14 +525,15 @@ function DetailScreen({ route, navigation }) {
                 </ScrollView>
 
                 {/* --- MODAL CLÔTURE --- */}
-                <Modal animationType="slide" transparent visible={isClotureModalVisible} onRequestClose={() => setIsClotureModalVisible(false)}>
+                <Modal animationType="slide" transparent visible={isClotureModalVisible}
+                       onRequestClose={() => setIsClotureModalVisible(false)}>
                     <KeyboardAvoidingView
                         behavior={Platform.OS === "ios" ? "padding" : "height"}
                         style={styles.modalOverlay}
                     >
                         <View style={styles.modalContent}>
                             {isFailing ? (
-                                <View style={{ width: '100%' }}>
+                                <View style={{width: '100%'}}>
                                     <Text style={styles.modalTitle}>Déclarer un échec</Text>
                                     <Text style={styles.modalDesc}>Pourquoi la mission n'a pas pu être réalisée ?</Text>
                                     <TextInput
@@ -520,27 +546,34 @@ function DetailScreen({ route, navigation }) {
                                         autoFocus={true}
                                     />
                                     <View style={styles.modalFooter}>
-                                        <TouchableOpacity style={styles.modalBtnSecondary} onPress={() => setIsFailing(false)}>
+                                        <TouchableOpacity style={styles.modalBtnSecondary}
+                                                          onPress={() => setIsFailing(false)}>
                                             <Text style={styles.modalBtnTextSecondary}>Retour</Text>
                                         </TouchableOpacity>
-                                        <TouchableOpacity style={[styles.modalBtnPrimary, { backgroundColor: '#F44336' }]} onPress={() => cloturerInterv('echec')}>
+                                        <TouchableOpacity style={[styles.modalBtnPrimary, {backgroundColor: '#F44336'}]}
+                                                          onPress={() => cloturerInterv('echec')}>
                                             <Text style={styles.modalBtnTextPrimary}>Confirmer</Text>
                                         </TouchableOpacity>
                                     </View>
                                 </View>
                             ) : (
-                                <View style={{ width: '100%' }}>
+                                <View style={{width: '100%'}}>
                                     <Text style={styles.modalTitle}>Clôturer la mission</Text>
                                     <Text style={styles.modalDesc}>La mission a-t-elle été un succès ?</Text>
-                                    <TouchableOpacity style={[styles.statusOption, { borderColor: '#4CAF50' }]} onPress={() => cloturerInterv('termine')}>
-                                        <Ionicons name="checkmark-circle" size={24} color="#4CAF50" />
-                                        <Text style={[styles.statusOptionText, { color: '#2E7D32' }]}>Succès - Terminée</Text>
+                                    <TouchableOpacity style={[styles.statusOption, {borderColor: '#4CAF50'}]}
+                                                      onPress={() => cloturerInterv('termine')}>
+                                        <Ionicons name="checkmark-circle" size={24} color="#4CAF50"/>
+                                        <Text style={[styles.statusOptionText, {color: '#2E7D32'}]}>Succès -
+                                            Terminée</Text>
                                     </TouchableOpacity>
-                                    <TouchableOpacity style={[styles.statusOption, { borderColor: '#F44336' }]} onPress={() => setIsFailing(true)}>
-                                        <Ionicons name="close-circle" size={24} color="#F44336" />
-                                        <Text style={[styles.statusOptionText, { color: '#D32F2F' }]}>Échec - Non achevée</Text>
+                                    <TouchableOpacity style={[styles.statusOption, {borderColor: '#F44336'}]}
+                                                      onPress={() => setIsFailing(true)}>
+                                        <Ionicons name="close-circle" size={24} color="#F44336"/>
+                                        <Text style={[styles.statusOptionText, {color: '#D32F2F'}]}>Échec - Non
+                                            achevée</Text>
                                     </TouchableOpacity>
-                                    <TouchableOpacity style={styles.modalCloseBtn} onPress={() => setIsClotureModalVisible(false)}>
+                                    <TouchableOpacity style={styles.modalCloseBtn}
+                                                      onPress={() => setIsClotureModalVisible(false)}>
                                         <Text style={styles.modalCloseText}>Annuler</Text>
                                     </TouchableOpacity>
                                 </View>
@@ -556,19 +589,26 @@ function DetailScreen({ route, navigation }) {
                     onRequestClose={() => setSignatureVisible(false)}
                 >
                     {/* Zone de dessin ou Bouton Simulation (Web) */}
-                    <View style={{ flex: 1, borderColor: '#000', borderWidth: 1, marginHorizontal: 20, marginBottom: 20, justifyContent: 'center' }}>
+                    <View style={{
+                        flex: 1,
+                        borderColor: '#000',
+                        borderWidth: 1,
+                        marginHorizontal: 20,
+                        marginBottom: 20,
+                        justifyContent: 'center'
+                    }}>
 
                         {Platform.OS === 'web' ? (
                             // --- VERSION WEB (Pour tester sans planter) ---
-                            <View style={{ alignItems: 'center', padding: 20 }}>
-                                <Text style={{ marginBottom: 20, color: 'orange', fontWeight: 'bold' }}>
+                            <View style={{alignItems: 'center', padding: 20}}>
+                                <Text style={{marginBottom: 20, color: 'orange', fontWeight: 'bold'}}>
                                     ⚠️ Signature non disponible sur Web
                                 </Text>
                                 <TouchableOpacity
                                     onPress={() => handleSignatureOK("signature_simulee_web")}
-                                    style={{ backgroundColor: '#2196F3', padding: 15, borderRadius: 8 }}
+                                    style={{backgroundColor: '#2196F3', padding: 15, borderRadius: 8}}
                                 >
-                                    <Text style={{ color: 'white' }}>SIMULER UNE SIGNATURE</Text>
+                                    <Text style={{color: 'white'}}>SIMULER UNE SIGNATURE</Text>
                                 </TouchableOpacity>
                             </View>
                         ) : (
@@ -590,29 +630,29 @@ function DetailScreen({ route, navigation }) {
     )
 }
 
-const InfoRow = ({ icon, label, value, isAddress, onPress }) => (
+const InfoRow = ({icon, label, value, isAddress, onPress}) => (
     <View style={styles.infoRow}>
         <View style={styles.infoIconBox}>
-            <Ionicons name={icon} size={18} color="#6A5AE0" />
+            <Ionicons name={icon} size={18} color="#6A5AE0"/>
         </View>
-        <View style={{ flex: 1 }}>
+        <View style={{flex: 1}}>
             <Text style={styles.infoLabel}>{label}</Text>
             <Text style={styles.infoValue}>{value}</Text>
         </View>
         {isAddress && (
             <TouchableOpacity onPress={onPress}>
-                <Ionicons name="map-outline" size={20} color="#6A5AE0" />
+                <Ionicons name="map-outline" size={20} color="#6A5AE0"/>
             </TouchableOpacity>
         )}
     </View>
 );
 
 const styles = StyleSheet.create({
-    container: { flex: 1, backgroundColor: '#F0F2F5' },
-    loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-    loadingText: { marginTop: 15, color: '#666', fontSize: 16 },
-    errorText: { marginTop: 15, color: '#F44336', fontSize: 16 },
-    scrollContent: { padding: 20, paddingBottom: 40 },
+    container: {flex: 1, backgroundColor: '#F0F2F5'},
+    loadingContainer: {flex: 1, justifyContent: 'center', alignItems: 'center'},
+    loadingText: {marginTop: 15, color: '#666', fontSize: 16},
+    errorText: {marginTop: 15, color: '#F44336', fontSize: 16},
+    scrollContent: {padding: 20, paddingBottom: 40},
 
     headerCard: {
         backgroundColor: 'white',
@@ -620,23 +660,31 @@ const styles = StyleSheet.create({
         padding: 24,
         marginBottom: 25,
         shadowColor: "#000",
-        shadowOffset: { width: 0, height: 10 },
+        shadowOffset: {width: 0, height: 10},
         shadowOpacity: 0.05,
         shadowRadius: 15,
         elevation: 5,
     },
-    headerInfo: { alignItems: 'flex-start' },
-    title: { fontSize: 24, fontWeight: 'bold', color: '#1A1A1A', marginBottom: 12 },
-    statusBadge: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 20 },
-    statusText: { fontWeight: 'bold', fontSize: 13, textTransform: 'uppercase' },
+    headerInfo: {alignItems: 'flex-start'},
+    title: {fontSize: 24, fontWeight: 'bold', color: '#1A1A1A', marginBottom: 12},
+    statusBadge: {paddingHorizontal: 12, paddingVertical: 6, borderRadius: 20},
+    statusText: {fontWeight: 'bold', fontSize: 13, textTransform: 'uppercase'},
 
-    sectionTitle: { fontSize: 12, fontWeight: '800', color: '#999', marginVertical: 15, letterSpacing: 1.2 },
+    sectionTitle: {fontSize: 12, fontWeight: '800', color: '#999', marginVertical: 15, letterSpacing: 1.2},
 
-    infoGrid: { backgroundColor: 'white', borderRadius: 24, padding: 20, marginBottom: 20 },
-    infoRow: { flexDirection: 'row', alignItems: 'center', marginVertical: 12 },
-    infoIconBox: { width: 36, height: 36, borderRadius: 12, backgroundColor: '#F0EFFF', justifyContent: 'center', alignItems: 'center', marginRight: 15 },
-    infoLabel: { fontSize: 11, color: '#999', textTransform: 'uppercase', marginBottom: 2 },
-    infoValue: { fontSize: 16, color: '#333', fontWeight: '600' },
+    infoGrid: {backgroundColor: 'white', borderRadius: 24, padding: 20, marginBottom: 20},
+    infoRow: {flexDirection: 'row', alignItems: 'center', marginVertical: 12},
+    infoIconBox: {
+        width: 36,
+        height: 36,
+        borderRadius: 12,
+        backgroundColor: '#F0EFFF',
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginRight: 15
+    },
+    infoLabel: {fontSize: 11, color: '#999', textTransform: 'uppercase', marginBottom: 2},
+    infoValue: {fontSize: 16, color: '#333', fontWeight: '600'},
 
     gpsButton: {
         backgroundColor: '#6A5AE0',
@@ -647,15 +695,15 @@ const styles = StyleSheet.create({
         borderRadius: 20,
         marginBottom: 25,
         shadowColor: "#6A5AE0",
-        shadowOffset: { width: 0, height: 4 },
+        shadowOffset: {width: 0, height: 4},
         shadowOpacity: 0.3,
         shadowRadius: 10,
         elevation: 5
     },
-    gpsButtonText: { color: 'white', fontWeight: 'bold', fontSize: 15, marginLeft: 10 },
+    gpsButtonText: {color: 'white', fontWeight: 'bold', fontSize: 15, marginLeft: 10},
 
-    inputContainer: { marginBottom: 20 },
-    inputLabel: { fontSize: 14, fontWeight: '600', color: '#444', marginBottom: 10, marginLeft: 5 },
+    inputContainer: {marginBottom: 20},
+    inputLabel: {fontSize: 14, fontWeight: '600', color: '#444', marginBottom: 10, marginLeft: 5},
     textArea: {
         backgroundColor: 'white',
         borderRadius: 20,
@@ -667,8 +715,8 @@ const styles = StyleSheet.create({
         borderColor: '#E0E0E0',
         textAlignVertical: 'top'
     },
-    readOnlyBox: { backgroundColor: '#F5F5F5', borderRadius: 20, padding: 20, minHeight: 80 },
-    readOnlyText: { fontSize: 16, color: '#666', lineHeight: 24 },
+    readOnlyBox: {backgroundColor: '#F5F5F5', borderRadius: 20, padding: 20, minHeight: 80},
+    readOnlyText: {fontSize: 16, color: '#666', lineHeight: 24},
 
     failureBox: {
         flexDirection: 'row',
@@ -679,10 +727,10 @@ const styles = StyleSheet.create({
         borderWidth: 1,
         borderColor: '#FFCDD2'
     },
-    failureTitle: { fontSize: 12, fontWeight: 'bold', color: '#D32F2F', marginBottom: 4 },
-    failureText: { fontSize: 14, color: '#B71C1C' },
+    failureTitle: {fontSize: 12, fontWeight: 'bold', color: '#D32F2F', marginBottom: 4},
+    failureText: {fontSize: 14, color: '#B71C1C'},
 
-    buttonGroup: { gap: 12 },
+    buttonGroup: {gap: 12},
     actionButton: {
         backgroundColor: '#4CAF50',
         flexDirection: 'row',
@@ -691,27 +739,47 @@ const styles = StyleSheet.create({
         paddingVertical: 18,
         borderRadius: 20,
         shadowColor: "#000",
-        shadowOffset: { width: 0, height: 2 },
+        shadowOffset: {width: 0, height: 2},
         shadowOpacity: 0.1,
         shadowRadius: 5,
         elevation: 3
     },
-    actionButtonText: { color: 'white', fontWeight: 'bold', fontSize: 16, marginLeft: 10 },
+    actionButtonText: {color: 'white', fontWeight: 'bold', fontSize: 16, marginLeft: 10},
 
-    modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', alignItems: 'center' },
-    modalContent: { backgroundColor: 'white', width: '90%', borderRadius: 30, padding: 30 },
-    modalTitle: { fontSize: 22, fontWeight: 'bold', color: '#1A1A1A', textAlign: 'center', marginBottom: 10 },
-    modalDesc: { fontSize: 15, color: '#666', textAlign: 'center', marginBottom: 25 },
-    modalInput: { backgroundColor: '#F0F2F5', borderRadius: 15, padding: 15, minHeight: 100, textAlignVertical: 'top', marginBottom: 25 },
-    modalFooter: { flexDirection: 'row', gap: 10 },
-    modalBtnSecondary: { flex: 1, paddingVertical: 15, backgroundColor: '#F0F2F5', borderRadius: 15, alignItems: 'center' },
-    modalBtnTextSecondary: { color: '#666', fontWeight: 'bold' },
-    modalBtnPrimary: { flex: 2, paddingVertical: 15, backgroundColor: '#6A5AE0', borderRadius: 15, alignItems: 'center' },
-    modalBtnTextPrimary: { color: 'white', fontWeight: 'bold' },
-    statusOption: { flexDirection: 'row', alignItems: 'center', borderWidth: 1.5, borderRadius: 20, padding: 20, marginBottom: 15 },
-    statusOptionText: { fontSize: 16, fontWeight: '700', marginLeft: 15 },
-    modalCloseBtn: { marginTop: 10, alignSelf: 'center', padding: 10 },
-    modalCloseText: { color: '#999', fontWeight: '600' },
+    modalOverlay: {flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', alignItems: 'center'},
+    modalContent: {backgroundColor: 'white', width: '90%', borderRadius: 30, padding: 30},
+    modalTitle: {fontSize: 22, fontWeight: 'bold', color: '#1A1A1A', textAlign: 'center', marginBottom: 10},
+    modalDesc: {fontSize: 15, color: '#666', textAlign: 'center', marginBottom: 25},
+    modalInput: {
+        backgroundColor: '#F0F2F5',
+        borderRadius: 15,
+        padding: 15,
+        minHeight: 100,
+        textAlignVertical: 'top',
+        marginBottom: 25
+    },
+    modalFooter: {flexDirection: 'row', gap: 10},
+    modalBtnSecondary: {
+        flex: 1,
+        paddingVertical: 15,
+        backgroundColor: '#F0F2F5',
+        borderRadius: 15,
+        alignItems: 'center'
+    },
+    modalBtnTextSecondary: {color: '#666', fontWeight: 'bold'},
+    modalBtnPrimary: {flex: 2, paddingVertical: 15, backgroundColor: '#6A5AE0', borderRadius: 15, alignItems: 'center'},
+    modalBtnTextPrimary: {color: 'white', fontWeight: 'bold'},
+    statusOption: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        borderWidth: 1.5,
+        borderRadius: 20,
+        padding: 20,
+        marginBottom: 15
+    },
+    statusOptionText: {fontSize: 16, fontWeight: '700', marginLeft: 15},
+    modalCloseBtn: {marginTop: 10, alignSelf: 'center', padding: 10},
+    modalCloseText: {color: '#999', fontWeight: '600'},
 
     sectionContainer: {
         marginTop: 20,
