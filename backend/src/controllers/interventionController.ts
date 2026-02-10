@@ -1,6 +1,20 @@
-const db = require("../db-connection");
+import { Request, Response } from 'express';
+import db from '../db/db-connection';
+import { Intervention } from '../interfaces/Interventions';
 
-const getAllInterventions = async (req, res) => {
+
+interface AuthRequest extends Request {
+    userId?: number;
+}
+
+interface AddInterventionBody {
+    interventionData: Partial<Intervention>;
+    materials?: { id: number; quantity: number }[];
+    technicianIds?: number[];
+}
+
+
+export const getAllInterventions = async (req: Request, res: Response): Promise<void> => {
     try {
         const interventions = await db('interventions')
             .orderBy('date', 'asc');
@@ -13,9 +27,8 @@ const getAllInterventions = async (req, res) => {
     }
 }
 
-const addIntervention = async (req, res) => {
-    // On récupère technicianIds (le tableau d'IDs) envoyé par le front
-    const { interventionData, materials, technicianIds } = req.body;
+export const addIntervention = async (req: Request, res: Response): Promise<void> => {
+    const { interventionData, materials, technicianIds } = req.body as AddInterventionBody;
 
     try {
         await db.transaction(async (trx) => {
@@ -27,14 +40,14 @@ const addIntervention = async (req, res) => {
                     adresse: interventionData.adresse,
                     date: interventionData.date,
                     statut: 'prévu',
-                    // On peut laisser technicien_id à NULL ou mettre le 1er du tableau
-                    // si tu n'as pas encore supprimé la colonne
-                    technicien_id: technicianIds[0] || null,
+                    // On garde ta logique hybride (colonne technicien_id + table de liaison)
+                    technicien_id: (technicianIds && technicianIds.length > 0) ? technicianIds[0] : null,
                     description: interventionData.description || '',
                     nomClient: interventionData.nomClient
                 });
+            // Note : Si tu utilises Postgres, ajoute .returning('id') à la fin de l'insert ci-dessus
 
-            // 2. NOUVEAU : Gestion des techniciens (Multi-technique)
+            // 2. Gestion des techniciens (Multi-technique)
             if (technicianIds && technicianIds.length > 0) {
                 const techsToInsert = technicianIds.map(id => ({
                     intervention_id: newInterventionId,
@@ -43,7 +56,7 @@ const addIntervention = async (req, res) => {
                 await trx('intervention_technicians').insert(techsToInsert);
             }
 
-            // 3. Gestion du matériel et du stock (Ton code existant)
+            // 3. Gestion du matériel et du stock
             if (materials && materials.length > 0) {
                 const materialsToInsert = materials.map(item => ({
                     intervention_id: newInterventionId,
@@ -71,7 +84,8 @@ const addIntervention = async (req, res) => {
         res.status(500).json({ error: "Erreur lors de la création de l'intervention." });
     }
 }
-const getAllInterventionsNonTermine = async (req, res) => {
+
+export const getAllInterventionsNonTermine = async (req: AuthRequest, res: Response): Promise<void> => {
     try {
         const technicienIdConnecte = req.userId;
 
@@ -81,7 +95,7 @@ const getAllInterventionsNonTermine = async (req, res) => {
             // On filtre sur l'ID du tech dans la table de liaison
             .where('intervention_technicians.technician_id', technicienIdConnecte)
             .whereNotIn('statut', ['annule', 'archiver'])
-            .select('interventions.*') // On ne veut que les colonnes de l'intervention
+            .select('interventions.*')
             .orderBy('date', 'asc');
 
         res.status(200).json(interventions);
@@ -91,10 +105,12 @@ const getAllInterventionsNonTermine = async (req, res) => {
     }
 }
 
-const getAllInterventionsArchived = async (req, res) => {
-    const technicienIdConnecte = req.userId
+export const getAllInterventionsArchived = async (req: AuthRequest, res: Response): Promise<any> => {
+    const technicienIdConnecte = req.userId;
 
     try {
+        // Attention : ici tu filtres sur technicien_id (ancienne colonne) ou via la liaison ?
+        // Je laisse ton code original tel quel :
         const interventionsArchivees = await db('interventions')
             .where({ statut: 'archiver', technicien_id: technicienIdConnecte })
             .orderBy('date', 'desc');
@@ -103,16 +119,16 @@ const getAllInterventionsArchived = async (req, res) => {
             return res.status(200).json([]);
         }
 
-        res.status(200).json(interventionsArchivees)
+        res.status(200).json(interventionsArchivees);
 
     }
     catch (e) {
-        console.error("Erreur lors de la récupération des interventions archivées :", e)
-        res.status(500).json({ message: "Erreur serveur" })
+        console.error("Erreur lors de la récupération des interventions archivées :", e);
+        res.status(500).json({ message: "Erreur serveur" });
     }
 }
 
-const getInterventionById = async (req, res) => {
+export const getInterventionById = async (req: AuthRequest, res: Response): Promise<void> => {
     const intervId = req.params.id;
     const technicienIdConnecte = req.userId;
 
@@ -134,7 +150,8 @@ const getInterventionById = async (req, res) => {
             .first();
 
         if (!interventionData) {
-            return res.status(404).json({ message: "L'intervention est introuvable ou vous n'y êtes pas assigné" });
+            res.status(404).json({ message: "L'intervention est introuvable ou vous n'y êtes pas assigné" });
+            return;
         }
 
         // Récupération du matériel lié
@@ -148,9 +165,8 @@ const getInterventionById = async (req, res) => {
                 'intervention_materials.to_bring'
             );
 
-        // On fusionne les données de l'intervention et le tableau de matériels
         res.status(200).json({
-            ...interventionData, // Utilise bien le même nom de variable ici
+            ...interventionData,
             materials: materials
         });
     } catch (e) {
@@ -160,33 +176,37 @@ const getInterventionById = async (req, res) => {
 }
 
 
-const terminerIntervention = async (req, res) => {
+export const terminerIntervention = async (req: AuthRequest, res: Response): Promise<void> => {
     const { id } = req.params;
+    // On type le body explicitement ici aussi
     const { statut, rapport, notes_technicien, failure_reason, signature } = req.body;
     const technicienIdConnecte = req.userId;
 
     if (!statut || !rapport || rapport.trim() === '') {
-        return res.status(400).json({ message: "Le rapport est obligatoire pour terminer l'intervention." });
+        res.status(400).json({ message: "Le rapport est obligatoire pour terminer l'intervention." });
+        return;
     }
 
     if (statut === 'echec') {
         if (!failure_reason || failure_reason.trim().length < 10) {
-            return res.status(400).json({
+            res.status(400).json({
                 message: "La raison de l'échec est obligatoire (min 10 caractères)."
             });
+            return;
         }
     }
 
     else if (statut === 'termine') {
         if (!signature || signature.trim() === '') {
-            return res.status(400).json({
+            res.status(400).json({
                 message: "La signature du client est obligatoire pour valider l'intervention."
             });
+            return;
         }
     }
 
     // Préparation des données
-    const dataToUpdate = {
+    const dataToUpdate: any = {
         statut: statut,
         rapport: rapport,
         notes_technicien: notes_technicien,
@@ -211,7 +231,8 @@ const terminerIntervention = async (req, res) => {
             .update(dataToUpdate);
 
         if (rowsAffected === 0) {
-            return res.status(404).json({ message: "Intervention introuvable ou non attribuée." });
+            res.status(404).json({ message: "Intervention introuvable ou non attribuée." });
+            return;
         }
 
         res.json({ message: "Intervention clôturée avec succès !" });
@@ -222,33 +243,35 @@ const terminerIntervention = async (req, res) => {
     }
 }
 
-const archiverIntervention = async (req, res) => {
-    const { id } = req.params
-    const technicienIdConnecte = req.userId
+export const archiverIntervention = async (req: AuthRequest, res: Response): Promise<void> => {
+    const { id } = req.params;
+    const technicienIdConnecte = req.userId;
 
     try {
+        // Attention: Vérifie si tu veux filtrer par la table technicien_id (ancienne) ou intervention_technicians (nouvelle)
         const rowsAffected = await db('interventions')
             .where({ id: id, technicien_id: technicienIdConnecte })
             .update({ statut: 'archiver' });
 
         if (rowsAffected === 0) {
-            return res.status(404).json({ message: "Intervention non trouvée ou non autorisée." });
+            res.status(404).json({ message: "Intervention non trouvée ou non autorisée." });
+            return;
         }
 
         res.status(200).json({ message: "L'intervention est archivée avec succès. " });
 
     }
     catch (e) {
-        res.status(500).json({ message: "Erreur serveur." })
+        res.status(500).json({ message: "Erreur serveur." });
     }
 }
 
-const modifierNotes = async (req, res) => {
-    const idInterv = req.params.id
-    const idTech = req.userId
+export const modifierNotes = async (req: AuthRequest, res: Response): Promise<void> => {
+    const idInterv = req.params.id;
+    const idTech = req.userId;
     const { notes_technicien, rapport } = req.body;
 
-    const updates = {};
+    const updates: any = {};
 
     if (notes_technicien !== undefined && notes_technicien !== null && notes_technicien.trim() !== "") {
         updates.notes_technicien = notes_technicien;
@@ -260,7 +283,8 @@ const modifierNotes = async (req, res) => {
 
     try {
         if (Object.keys(updates).length === 0) {
-            return res.status(400).json({ message: "Veuillez fournir au moins les notes ou le rapport avec un contenu valide." });
+            res.status(400).json({ message: "Veuillez fournir au moins les notes ou le rapport avec un contenu valide." });
+            return;
         }
         updates.updated_at = new Date();
 
@@ -275,27 +299,14 @@ const modifierNotes = async (req, res) => {
             .update(updates);
 
         if (updatedRows === 0) {
-            return res.status(404).json({ message: "Intervention introuvable ou non assignée à cet utilisateur." });
+            res.status(404).json({ message: "Intervention introuvable ou non assignée à cet utilisateur." });
+            return;
         }
 
         res.status(200).json({ message: "L'intervention a été modifiée avec succès." });
     }
     catch (e) {
         console.error("Erreur lors de la modification :", e);
-        res.status(500).json({ message: "Erreur serveur." })
-
+        res.status(500).json({ message: "Erreur serveur." });
     }
-}
-
-
-
-module.exports = {
-    getAllInterventions,
-    getAllInterventionsNonTermine,
-    getAllInterventionsArchived,
-    getInterventionById,
-    terminerIntervention,
-    archiverIntervention,
-    modifierNotes,
-    addIntervention
 }
