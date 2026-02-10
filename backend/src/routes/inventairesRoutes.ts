@@ -1,8 +1,7 @@
-const express = require('express');
+import express from 'express';
 const router = express.Router();
-const inventairesController = require('../controllers/inventairesController');
-const verifyToken = require("../middlewares/authMiddleware");
-const isAdmin = require("../middlewares/IsAdmin");
+import {verifyToken} from "../middlewares/authMiddleware";
+import * as inventairesController from "../controllers/inventairesController";
 
 router.use(verifyToken);
 
@@ -15,4 +14,4 @@ router.get('/:id/materials', inventairesController.getMaterialsForIntervention )
 
 router.put('/:id/materials/:materialId', inventairesController.toggleCheckMaterial);
 
-module.exports = router;
+export default router

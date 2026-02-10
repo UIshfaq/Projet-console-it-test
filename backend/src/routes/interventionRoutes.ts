@@ -1,8 +1,9 @@
-const express = require('express');
+import express from 'express';
+import {verifyToken} from "../middlewares/authMiddleware";
+import * as interventionController from "../controllers/interventionController";
+import {isAdmin} from '../middlewares/IsAdmin';
+
 const router = express.Router();
-const verifyToken = require('../middlewares/authMiddleware');
-const interventionController = require('../controllers/interventionController');
-const isAdmin = require('../middlewares/IsAdmin');
 
 router.use(verifyToken);
 
@@ -22,4 +23,4 @@ router.patch('/:id/archive', interventionController.archiverIntervention );
 
 router.patch('/:id/modifier', interventionController.modifierNotes );
 
-module.exports = router;
+export default router;
