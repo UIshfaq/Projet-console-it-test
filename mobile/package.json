@@ -14,6 +14,8 @@
     "@react-navigation/bottom-tabs": "^7.9.0",
     "@react-navigation/native": "^7.1.19",
     "@react-navigation/stack": "^7.6.2",
+    "@types/react": "~19.1.10",
+    "@types/react-native": "^0.72.8",
     "AsyncStorage": "^0.1.5",
     "axios": "^1.13.2",
     "dotenv": "^17.2.3",
@@ -30,7 +32,8 @@
     "react-native-safe-area-context": "~5.6.0",
     "react-native-screens": "~4.16.0",
     "react-native-signature-canvas": "^5.0.1",
-    "react-native-web": "^0.21.0"
+    "react-native-web": "^0.21.0",
+    "typescript": "~5.9.2"
   },
   "private": true,
   "description": "",
