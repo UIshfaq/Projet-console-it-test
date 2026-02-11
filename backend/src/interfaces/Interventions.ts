@@ -8,7 +8,6 @@ export interface Intervention {
     created_at: Date;
     updated_at: Date;
 
-    // Champs optionnels (nullable dans ta BDD)
     description?: string;
     latitude?: number;
     longitude?: number;
