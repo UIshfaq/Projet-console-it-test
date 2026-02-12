@@ -109,16 +109,22 @@ export const getAllInterventionsArchived = async (req: AuthRequest, res: Respons
     const technicienIdConnecte = req.userId;
 
     try {
-        // Attention : ici tu filtres sur technicien_id (ancienne colonne) ou via la liaison ?
-        // Je laisse ton code original tel quel :
         const interventionsArchivees = await db('interventions')
-            .where({ statut: 'archiver', technicien_id: technicienIdConnecte })
-            .orderBy('date', 'desc');
+            // 1. JOINTURE : On lie la table des techniciens
+            .join('intervention_technicians', 'interventions.id', 'intervention_technicians.intervention_id')
 
-        if (interventionsArchivees.length === 0) {
-            return res.status(200).json([]);
-        }
+            // 2. FILTRES : Statut 'archiver' ET le technicien connecté
+            .where('interventions.statut', 'archiver')
+            .andWhere('intervention_technicians.technician_id', technicienIdConnecte)
 
+            // 3. SELECTION : On ne prend que les données de l'intervention (pour éviter les conflits d'ID)
+            .select('interventions.*')
+
+            // 4. TRI
+            .orderBy('interventions.date', 'desc');
+
+        // Note : Knex renvoie déjà un tableau vide [] si rien n'est trouvé,
+        // donc tu peux renvoyer directement le résultat.
         res.status(200).json(interventionsArchivees);
 
     }
@@ -127,6 +133,7 @@ export const getAllInterventionsArchived = async (req: AuthRequest, res: Respons
         res.status(500).json({ message: "Erreur serveur" });
     }
 }
+
 
 export const getInterventionById = async (req: AuthRequest, res: Response): Promise<void> => {
     const intervId = req.params.id;
@@ -159,6 +166,7 @@ export const getInterventionById = async (req: AuthRequest, res: Response): Prom
             .join('materials', 'intervention_materials.material_id', 'materials.id')
             .where('intervention_materials.intervention_id', intervId)
             .select(
+                'materials.id',
                 'materials.name',
                 'intervention_materials.quantity_required',
                 'intervention_materials.is_checked',
@@ -174,6 +182,7 @@ export const getInterventionById = async (req: AuthRequest, res: Response): Prom
         res.status(500).json({ message: "Erreur serveur" });
     }
 }
+
 
 
 export const terminerIntervention = async (req: AuthRequest, res: Response): Promise<void> => {
@@ -248,20 +257,28 @@ export const archiverIntervention = async (req: AuthRequest, res: Response): Pro
     const technicienIdConnecte = req.userId;
 
     try {
-        // Attention: Vérifie si tu veux filtrer par la table technicien_id (ancienne) ou intervention_technicians (nouvelle)
         const rowsAffected = await db('interventions')
-            .where({ id: id, technicien_id: technicienIdConnecte })
-            .update({ statut: 'archiver' });
+            .where({ id: id }) // 1. Cible l'intervention
+            .whereExists(function() {
+                // 2. Vérifie la permission dans la table intermédiaire
+                this.select('*')
+                    .from('intervention_technicians')
+                    .whereRaw('intervention_technicians.intervention_id = interventions.id')
+                    // ⚠️ Vérifie le nom de ta colonne : 'user_id' ou 'technician_id' ?
+                    .andWhere({ technician_id: technicienIdConnecte });
+            })
+            .update({ statut: 'archiver' }); // 3. L'action est ICI, en dehors du callback
 
+        // 4. On vérifie le résultat ICI, une fois la requête finie
         if (rowsAffected === 0) {
             res.status(404).json({ message: "Intervention non trouvée ou non autorisée." });
             return;
         }
 
-        res.status(200).json({ message: "L'intervention est archivée avec succès. " });
+        res.status(200).json({ message: "L'intervention est archivée avec succès." });
 
-    }
-    catch (e) {
+    } catch (e) {
+        console.error("Erreur archivage :", e);
         res.status(500).json({ message: "Erreur serveur." });
     }
 }
@@ -289,12 +306,13 @@ export const modifierNotes = async (req: AuthRequest, res: Response): Promise<vo
         updates.updated_at = new Date();
 
         const updatedRows = await db('interventions')
-            .where({
-                id: idInterv,
-                technicien_id: idTech
-            })
-            .whereNot({
-                statut: 'archiver'
+            .where({ id: idInterv })
+            .whereNot({ statut: 'archiver' })
+            .whereExists(function() {
+                this.select('*')
+                    .from('intervention_technicians') // Ta table intermédiaire
+                    .whereRaw('intervention_technicians.intervention_id = interventions.id') // Lien BDD
+                    .andWhere({ technician_id: idTech }); // ⚠️ Vérifie si ta colonne s'appelle 'user_id' ou 'technician_id'
             })
             .update(updates);
 
