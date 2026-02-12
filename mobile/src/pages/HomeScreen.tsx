@@ -1,11 +1,46 @@
 import React, { useContext } from "react";
 import { StyleSheet, Text, View, TouchableOpacity, SafeAreaView, StatusBar, ScrollView, Alert, Dimensions } from "react-native";
-import { AuthContext } from "../contextes/AuthContext.js";
 import { Ionicons } from '@expo/vector-icons';
+import { StackNavigationProp } from '@react-navigation/stack';
+import {  BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
+
+import { AuthContext } from "../contextes/AuthContext";
+import { RootStackParamList, TabParamList } from "../types/Navigation";
+import {CompositeNavigationProp} from "@react-navigation/native";
+
+
+type HomeScreenNavigationProp = CompositeNavigationProp<
+    BottomTabNavigationProp<TabParamList, 'Dashboard'>,
+    StackNavigationProp<RootStackParamList>
+>;
+
+interface Props {
+    navigation: HomeScreenNavigationProp;
+}
 
 const { width } = Dimensions.get('window');
 
-function HomeScreen({ navigation }) {
+// 2. Typage des props du petit composant bouton
+interface QuickActionProps {
+    icon: keyof typeof Ionicons.glyphMap; // S'assure que le nom de l'icône existe vraiment !
+    title: string;
+    subtitle: string;
+    color: string;
+    onPress: () => void;
+}
+
+// Le composant QuickAction avec ses props typées
+const QuickActionButton = ({ icon, title, subtitle, color, onPress }: QuickActionProps) => (
+    <TouchableOpacity style={styles.gridCard} onPress={onPress} activeOpacity={0.7}>
+        <View style={[styles.miniIcon, { backgroundColor: `${color}15` }]}>
+            <Ionicons name={icon} size={24} color={color} />
+        </View>
+        <Text style={styles.gridTitle}>{title}</Text>
+        <Text style={styles.gridSub}>{subtitle}</Text>
+    </TouchableOpacity>
+);
+
+function HomeScreen({ navigation }: Props) {
     const { logout } = useContext(AuthContext);
 
     const today = new Date().toLocaleDateString('fr-FR', {
@@ -16,8 +51,11 @@ function HomeScreen({ navigation }) {
 
     const formattedDate = today.charAt(0).toUpperCase() + today.slice(1);
 
-    const handleNavigation = (screenName) => {
+    // 3. Typage de l'argument screenName
+    // On dit : "C'est soit une clé de RootStack, soit une clé de Tab, soit null"
+    const handleNavigation = (screenName: keyof RootStackParamList | keyof TabParamList | null) => {
         if (screenName) {
+            // @ts-ignore : TS a du mal quand on mixe Stack et Tab dans une fonction générique, on ignore juste ici pour simplifier
             navigation.navigate(screenName);
         } else {
             Alert.alert("🚧 En construction", "Ce module sera développé dans la prochaine étape du MVP.");
@@ -108,16 +146,6 @@ function HomeScreen({ navigation }) {
     );
 }
 
-const QuickActionButton = ({ icon, title, subtitle, color, onPress }) => (
-    <TouchableOpacity style={styles.gridCard} onPress={onPress} activeOpacity={0.7}>
-        <View style={[styles.miniIcon, { backgroundColor: `${color}15` }]}>
-            <Ionicons name={icon} size={24} color={color} />
-        </View>
-        <Text style={styles.gridTitle}>{title}</Text>
-        <Text style={styles.gridSub}>{subtitle}</Text>
-    </TouchableOpacity>
-);
-
 const styles = StyleSheet.create({
     container: { flex: 1, backgroundColor: '#F0F2F5' },
     scrollContent: { padding: 20, paddingBottom: 120 },
@@ -131,6 +159,7 @@ const styles = StyleSheet.create({
     },
     dateText: { fontSize: 14, color: '#666', fontWeight: '500' },
     greeting: { fontSize: 22, fontWeight: 'bold', color: '#1A1A1A', marginTop: 4 },
+    avatarButton: {}, // Ajouté pour éviter erreur si manquant
     avatar: {
         width: 48,
         height: 48,
@@ -144,26 +173,6 @@ const styles = StyleSheet.create({
         shadowRadius: 4,
         elevation: 3,
     },
-
-    statsContainer: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        marginBottom: 25
-    },
-    statCard: {
-        width: '48%',
-        padding: 20,
-        borderRadius: 20,
-        shadowColor: "#000",
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.1,
-        shadowRadius: 8,
-        elevation: 4,
-    },
-    statNumber: { fontSize: 28, fontWeight: 'bold', color: 'white' },
-    statLabel: { fontSize: 16, fontWeight: '600', color: 'rgba(255,255,255,0.9)', marginTop: 4 },
-    statSubLabel: { fontSize: 12, color: 'rgba(255,255,255,0.7)', marginTop: 2 },
-
     sectionTitle: {
         fontSize: 12,
         fontWeight: '800',
@@ -172,7 +181,6 @@ const styles = StyleSheet.create({
         letterSpacing: 1.2,
         marginLeft: 4
     },
-
     heroCard: {
         backgroundColor: '#6A5AE0',
         borderRadius: 24,

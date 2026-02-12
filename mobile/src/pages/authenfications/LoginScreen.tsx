@@ -17,7 +17,14 @@ import { Ionicons, AntDesign } from '@expo/vector-icons';
 import axios from 'axios'
 
 import { AuthContext } from "../../contextes/AuthContext";
+import { RootStackParamList } from "../../types/Navigation";
+import {StackNavigationProp} from "@react-navigation/stack";
 
+type LoginScreenNavigationProp = StackNavigationProp<RootStackParamList, 'Login'>;
+
+interface Props {
+    navigation: LoginScreenNavigationProp;
+}
 
 const PRIMARY_COLOR = '#6A5AE0';
 const SCREEN_BG_COLOR = '#F7F8F9';
@@ -26,10 +33,10 @@ const BORDER_COLOR = '#E0E0E0';
 const TEXT_GRAY_COLOR = '#8A8A8A';
 const VALID_COLOR = '#4CAF50';
 
-const LoginScreen = ({ navigation }) => {
-    const [email, setEmail] = useState('');
-    const [password, setPassword] = useState('');
-    const [rememberMe, setRememberMe] = useState(false);
+const LoginScreen = ({ navigation }: Props) => {
+    const [email, setEmail] = useState<string>('');
+    const [password, setPassword] = useState<string>('');
+    const [rememberMe, setRememberMe] = useState<boolean>(false);
     const [isPasswordVisible, setIsPasswordVisible] = useState(false);
 
 
@@ -37,8 +44,6 @@ const LoginScreen = ({ navigation }) => {
 
     const handleLogin = async () => {
 
-        // console.log("CONTENU EMAIL:", `"${email}"`);
-        // console.log("CONTENU PASSWORD:", `"${password}"`);
         if (email === "" || password === "") {
             Alert.alert("Erreur", "Veuillez remplir tous les champs");
             console.log("erreur: champs vides");
@@ -65,8 +70,9 @@ const LoginScreen = ({ navigation }) => {
 
         } catch (error) {
             console.error("Erreur de connexion:", error);
-            if (error.response) {
-                Alert.alert('Erreur', error.response.data.message);
+            if (axios.isAxiosError(error) && error.response) {
+                // TS sait maintenant que error.response existe
+                Alert.alert('Erreur', error.response.data.message || 'Erreur inconnue');
             } else {
                 Alert.alert('Erreur', 'Impossible de se connecter au serveur.');
             }
@@ -182,7 +188,7 @@ const LoginScreen = ({ navigation }) => {
     )
 };
 
-// ... (Tous vos styles restent les mêmes)
+
 const styles = StyleSheet.create({
 
     kavContainer: {

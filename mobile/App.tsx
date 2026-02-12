@@ -2,25 +2,24 @@ import React, { useContext } from "react";
 import { NavigationContainer } from "@react-navigation/native";
 import { createStackNavigator } from "@react-navigation/stack";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
-import { AuthContext, AuthProvider } from "./src/contextes/AuthContext";
 import { Ionicons } from '@expo/vector-icons';
 
+// 1. On importe le contexte et les types qu'on vient de créer
+import { AuthContext, AuthProvider } from "./src/contextes/AuthContext";
+import { RootStackParamList, TabParamList } from "./src/types/Navigation";
+
 import LoginScreen from "./src/pages/authenfications/LoginScreen";
-
 import HomeScreen from "./src/pages/HomeScreen";
-
 import InterventionScreen from "./src/pages/intervention/PlaningScreen";
 import DetailsScreen from "./src/pages/intervention/detailsScreen";
 import ArchiverScreen from "./src/pages/intervention/intervArchiverScreen";
-
 import LoadingScreen from "./src/pages/authenfications/LoadScreen";
-
 import InventaireScreen from "./src/pages/inventaire/inventaireScreen";
-
 import ProfileScreen from "./src/pages/authenfications/ProfileScreen";
 
-const Stack = createStackNavigator();
-const Tab = createBottomTabNavigator();
+// 3. C'est ICI la magie : on injecte nos types dans les créateurs de navigation
+const Stack = createStackNavigator<RootStackParamList>();
+const Tab = createBottomTabNavigator<TabParamList>();
 
 const AuthNavigator = () => (
     <Stack.Navigator screenOptions={{ headerShown: false }}>
@@ -32,7 +31,8 @@ const TabNavigator = () => (
     <Tab.Navigator
         screenOptions={({ route }) => ({
             tabBarIcon: ({ focused, color, size }) => {
-                let iconName;
+                let iconName: keyof typeof Ionicons.glyphMap = 'help'; // Valeur par défaut pour TS
+
                 if (route.name === 'Dashboard') {
                     iconName = focused ? 'grid' : 'grid-outline';
                 } else if (route.name === 'Missions') {
@@ -60,19 +60,11 @@ const TabNavigator = () => (
                 shadowRadius: 15,
                 elevation: 10,
                 borderTopWidth: 0,
-                paddingBottom: 0, // Centered icons in floating bar
+                paddingBottom: 0,
             },
-            tabBarItemStyle: {
-                height: 70, // Align with bar height
-            },
-            tabBarLabelStyle: {
-                fontSize: 11,
-                fontWeight: '600',
-                marginBottom: 10,
-            },
-            tabBarIconStyle: {
-                marginTop: 5,
-            },
+            tabBarItemStyle: { height: 70 },
+            tabBarLabelStyle: { fontSize: 11, fontWeight: '600', marginBottom: 10 },
+            tabBarIconStyle: { marginTop: 5 },
             headerStyle: {
                 backgroundColor: '#FFF',
                 elevation: 0,
@@ -100,12 +92,16 @@ const AppNavigator = () => (
         headerTitleStyle: { fontWeight: 'bold' }
     }}>
         <Stack.Screen name="Main" component={TabNavigator} options={{ headerShown: false }} />
+
+        {/* TypeScript sait maintenant que cet écran attend un 'interventionId' */}
         <Stack.Screen name="Detail" component={DetailsScreen} options={{ title: 'Détail Mission' }} />
-        <Stack.Screen name="Inventaires" component={InventaireScreen}></Stack.Screen>
+
+        <Stack.Screen name="Inventaires" component={InventaireScreen} />
     </Stack.Navigator>
 );
 
 function AppNavigatorLogic() {
+    // Ici, le contexte est maintenant typé !
     const { isLoading, userToken } = useContext(AuthContext);
 
     if (isLoading) {
