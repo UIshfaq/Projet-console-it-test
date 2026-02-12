@@ -4,19 +4,25 @@ import { AuthContext } from "../../contextes/AuthContext";
 import { Ionicons } from '@expo/vector-icons';
 import axios from "axios";
 
-
+interface UserProfile {
+    id: number;
+    nom: string;
+    email: string;
+    phone_number?: string;
+    role: string;
+}
 
 function ProfileScreen() {
     const { logout } = useContext(AuthContext);
     const { userToken } = useContext(AuthContext);
-    const [profileData, setProfileData] = useState()
+    const [profileData, setProfileData] = useState<UserProfile |null>(null)
 
 
     const fetchProfile = async () => {
 
         try {
             const backendUrl = `${process.env.EXPO_PUBLIC_API_URL}/api/users/me`;
-            const response = await axios.get(backendUrl, {
+            const response = await axios.get<UserProfile>(backendUrl, {
                 headers: {
                     Authorization: `Bearer ${userToken}`
                 }
@@ -45,8 +51,10 @@ function ProfileScreen() {
                     <View style={styles.avatarLarge}>
                         <Ionicons name="person" size={60} color="#6A5AE0" />
                     </View>
-                    <Text style={styles.userName}>Technicien Console-IT</Text>
-                    <Text style={styles.userRole}>Niveau Expert • Support Terrain</Text>
+                    <Text style={styles.userName}>{profileData?.nom || "Technicien"}</Text>
+                    <Text style={styles.userRole}>
+                        {profileData?.role ? profileData.role.toUpperCase() : "Support Terrain"}
+                    </Text>
                 </View>
 
                 <View style={styles.section}>
@@ -74,8 +82,14 @@ function ProfileScreen() {
     );
 }
 
+interface ProfileOptionProps {
+    icon: keyof typeof Ionicons.glyphMap;
+    label: string;
+    value: string;
+    isAction?: boolean;
+}
 
-const ProfileOption = ({ icon, label, value }) => (
+const ProfileOption = ({ icon, label, value }:ProfileOptionProps) => (
     <TouchableOpacity style={styles.optionRow}>
         <View style={styles.optionIconBox}>
             <Ionicons name={icon} size={20} color="#6A5AE0" />
