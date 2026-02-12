@@ -139,30 +139,34 @@ export const useInterventionDetails = (interventionId: number, navigation: any) 
     };
 
     // Clôture de l'intervention
+    // ... dans useInterventionDetails.ts
+
     const cloturerInterv = async (finalStatut: InterventionStatus, signatureDirecte: string | null = null) => {
 
-        // 1. Vérif Rapport
-        if (!rapport || rapport.trim() === '') {
-            Alert.alert("Rapport manquant", "Veuillez écrire un rapport avant de valider.");
-            return;
-        }
+        // 1. --- LOGIQUE DE VALIDATION ---
 
-        // 2. Vérif Raison Echec
-        let failureReasonToSend: string | null = null;
+        // CAS ÉCHEC : On vérifie la "Raison" de la modale
         if (finalStatut === 'echec') {
-            if (!echecRaison || echecRaison.trim().length < 10) {
-                Alert.alert("Précision requise", "Veuillez détailler la raison de l'échec (min 10 car.).");
+            if (!echecRaison || echecRaison.trim().length < 5) { // J'ai baissé à 5 caractères pour tester
+                Alert.alert("Précision requise", "Veuillez donner une raison pour l'échec.");
                 return;
             }
-            failureReasonToSend = echecRaison;
+        }
+        // CAS SUCCÈS : On vérifie le "Rapport" principal
+        else {
+            if (!rapport || rapport.trim() === '') {
+                Alert.alert("Rapport manquant", "Veuillez écrire un rapport avant de valider.");
+                return;
+            }
         }
 
-        // 3. Logique Signature
+        // 2. --- GESTION DE LA SIGNATURE (Uniquement pour Succès) ---
         let finalSignature: string | null = null;
 
         if (finalStatut === 'termine') {
             finalSignature = signatureDirecte || signatureData;
 
+            // Si pas de signature, on ouvre la modale et on stop
             if (!finalSignature) {
                 setIsClotureModalVisible(false);
                 setTimeout(() => {
@@ -172,15 +176,21 @@ export const useInterventionDetails = (interventionId: number, navigation: any) 
             }
         }
 
-        // 4. Envoi API
+        // 3. --- ENVOI DES DONNÉES ---
         try {
             const backendUrl = `${process.env.EXPO_PUBLIC_API_URL}/api/interventions/${interventionId}`;
+
+            // ASTUCE : Si c'est un échec et que le rapport est vide, on utilise la raison comme rapport
+            // Cela évite d'envoyer un rapport vide en BDD
+            const rapportFinal = (finalStatut === 'echec' && (!rapport || rapport.trim() === ''))
+                ? `[ÉCHEC] Motif : ${echecRaison}`
+                : rapport;
 
             const dataToSend: any = {
                 statut: finalStatut,
                 notes_technicien: notesTechnicien,
-                rapport: rapport,
-                failure_reason: failureReasonToSend,
+                rapport: rapportFinal, // On envoie le rapport calculé
+                failure_reason: (finalStatut === 'echec') ? echecRaison : null,
             };
 
             if (finalSignature) {
@@ -191,26 +201,29 @@ export const useInterventionDetails = (interventionId: number, navigation: any) 
                 headers: { Authorization: `Bearer ${userToken}` }
             });
 
+            // Mise à jour locale (Optimiste)
             if (detailIntervention) {
                 setDetailIntervention({
                     ...detailIntervention,
                     statut: finalStatut,
-                    rapport: rapport,
+                    rapport: rapportFinal,
                     notes_technicien: notesTechnicien,
-                    failure_reason: failureReasonToSend ?? undefined, // '?? undefined' pour TS
+                    failure_reason: dataToSend.failure_reason,
                     signature: finalSignature ?? undefined
                 });
             }
 
-            // Nettoyage
+            // Fermeture des modales et retour
             setIsClotureModalVisible(false);
             setSignatureVisible(false);
             setIsFailing(false);
             setEchecRaison('');
 
-            Alert.alert("Mission Clôturée", `L'intervention est maintenant en statut : ${finalStatut}`, [
-                { text: "OK", onPress: () => navigation.goBack() }
-            ]);
+            Alert.alert(
+                finalStatut === 'echec' ? "Déclaré en échec" : "Mission Terminée",
+                "Le statut a été mis à jour.",
+                [{ text: "OK", onPress: () => navigation.goBack() }]
+            );
 
         } catch (e: any) {
             console.error("Erreur Clôture :", e);
