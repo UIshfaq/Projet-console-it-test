@@ -112,13 +112,23 @@ export const useInterventionDetails = (interventionId: number, navigation: any) 
     };
 
     // Gestion du Check Matériel (Manquant dans ton snippet mais nécessaire)
-    const toggleMaterialCheck = async (idDuMateriel: number | undefined, currentStatus: boolean | number | undefined) => {
-        if (idDuMateriel === undefined) return;
+    // Dans useInterventionDetails.ts
 
+    const toggleMaterialCheck = async (idDuMateriel: number | undefined, currentStatus: boolean | number | undefined) => {
+        // 1. Sécurité ID
+        if (idDuMateriel === undefined) {
+            console.error("ID matériel manquant !");
+            return;
+        }
+
+        // 2. Calcul du nouveau statut
         const isCheckedBool = currentStatus === 1 || currentStatus === true;
         const newStatus = !isCheckedBool;
 
-        // Mise à jour Optimiste UI
+        // 3. MISE À JOUR OPTIMISTE (On change l'écran tout de suite)
+        // On sauvegarde l'ancien état au cas où ça plante
+        const previousMaterials = [...materials];
+
         setMaterials(prevMaterials => prevMaterials.map(item => {
             const itemId = item.material_id || item.id;
             if (itemId === idDuMateriel) {
@@ -127,14 +137,22 @@ export const useInterventionDetails = (interventionId: number, navigation: any) 
             return item;
         }));
 
+        // 4. ENVOI AU SERVEUR
         const backendUrl = `${process.env.EXPO_PUBLIC_API_URL}/api/inventaires/${interventionId}/materials/${idDuMateriel}`;
+
         try {
             await axios.put(backendUrl, { is_checked: newStatus ? 1 : 0 },
                 { headers: { Authorization: `Bearer ${userToken}` } }
             );
+            // Si on arrive ici, tout va bien, le serveur est synchro.
         } catch (e) {
-            console.error("Erreur mise à jour check :", e);
-            Alert.alert("Erreur", "Impossible de valider cet objet (Problème réseau)");
+            console.error("Erreur synchro check :", e);
+
+            // 🚨 5. ROLLBACK : C'est ici que tu corriges le bug !
+            // Si le serveur dit non, on remet la liste comme avant.
+            setMaterials(previousMaterials);
+
+            Alert.alert("Oups", "Problème de connexion, la case n'a pas été cochée.");
         }
     };
 
