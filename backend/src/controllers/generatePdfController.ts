@@ -1,0 +1,63 @@
+import { Request, Response } from "express";
+import db from "../db/db-connection";
+import { buildInterventionPdf, PdfData } from "../services/pdf/pdfService";
+
+interface AuthRequest extends Request {
+    userId?: number;
+}
+
+export const generatePdf = async (req: AuthRequest, res: Response): Promise<void> => {
+    try {
+        // On récupère l'ID depuis l'URL (ex: /generate-pdf/5)
+        const interventionId = req.params.id;
+        const userId = req.userId;
+
+        if (!userId) {
+            res.status(401).json({ message: "Non autorisé" });
+            return;
+        }
+
+        if (!interventionId) {
+            res.status(400).json({ message: "L'ID de l'intervention est requis." });
+            return;
+        }
+
+        const pdfData = await db('interventions')
+            .select(
+                "interventions.id",
+                "interventions.titre",
+                "interventions.adresse",
+                "interventions.description",
+                "interventions.nomClient",
+                "interventions.rapport",
+                "interventions.failure_reason",
+                "interventions.signature",
+                "users.nom as nomTechnicien"
+            )
+            .join("intervention_technicians", "interventions.id", "intervention_technicians.intervention_id")
+            .join("users", "intervention_technicians.technician_id", "users.id")
+            .where("interventions.id", interventionId) // On utilise la variable modifiée
+            .where("intervention_technicians.technician_id", userId)
+            .first();
+
+        if (!pdfData) {
+            res.status(404).json({ message: "Intervention introuvable ou accès refusé." });
+            return;
+        }
+
+        const pdfBuffer = await buildInterventionPdf(pdfData as PdfData);
+
+        // 2. On prévient le navigateur ou l'application mobile de ce qu'on lui envoie (les Headers)
+        res.setHeader('Content-Type', 'application/pdf');
+        // L'option attachment permet de forcer le téléchargement avec un nom propre
+        res.setHeader('Content-Disposition', `attachment; filename="intervention_${interventionId}.pdf"`);
+        res.setHeader('Content-Length', pdfBuffer.length);
+
+        // 3. On envoie le fichier brut ! (On utilise .send et pas .json)
+        res.status(200).send(pdfBuffer);
+
+    } catch (error) {
+        console.error("Erreur lors de la préparation des données PDF :", error);
+        res.status(500).json({ message: "Erreur serveur" });
+    }
+}

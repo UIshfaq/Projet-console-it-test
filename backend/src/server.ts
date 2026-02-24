@@ -24,6 +24,9 @@ app.use('/api/users',userRoutes );
 import dashboardAdminRoutes from './routes/dashboardAdminRoute';
 app.use('/api/dashboard/admin', dashboardAdminRoutes);
 
+import generatePdfRoute from './routes/generativePdfRoute'
+app.use('/api', generatePdfRoute);
+
 
 
 const PORT = process.env.PORT || 3000;
