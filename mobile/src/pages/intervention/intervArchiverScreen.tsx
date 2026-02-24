@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useContext } from 'react';
+import React, {useState, useContext, useCallback} from 'react';
 import {
     View, Text, FlatList, StyleSheet, ActivityIndicator,
     TouchableOpacity, SafeAreaView, RefreshControl
@@ -11,6 +11,7 @@ import { StackScreenProps } from '@react-navigation/stack';
 import {RootStackParamList, TabParamList} from '../../types/Navigation';
 import { AuthContext } from '../../contextes/AuthContext';
 import { Intervention } from '../../types/Intervention';
+import {useFocusEffect} from "@react-navigation/native";
 
 type Props = StackScreenProps<RootStackParamList & TabParamList, 'Archives'>;
 
@@ -24,25 +25,33 @@ export default function InterventionArchiverScreen({ navigation }: Props) {
 
     const fetchArchives = async () => {
         try {
-
             const url = `${process.env.EXPO_PUBLIC_API_URL}/api/interventions/archived`;
 
-            const response = await axios.get<Intervention[]>(url, {
+
+            const response = await axios.get(url, {
                 headers: { Authorization: `Bearer ${userToken}` }
             });
-
             setArchives(response.data);
-        } catch (error) {
-            console.error("Erreur récupération archives:", error);
+
+        } catch (error: any) {
+
+            console.error("❌ Erreur API :", error.response?.status, error.response?.data || error.message);
         } finally {
             setLoading(false);
             setRefreshing(false);
         }
     };
+    useFocusEffect(
+        useCallback(() => {
+            // Cette fonction sera appelée à chaque fois que l'écran s'affiche
+            fetchArchives();
 
-    useEffect(() => {
-        fetchArchives();
-    }, []);
+            // On peut optionnellement retourner une fonction de nettoyage si besoin
+            return () => {
+                // Rien de spécial à nettoyer ici pour le moment
+            };
+        }, []) // Le tableau vide indique à useCallback de ne mémoriser la fonction qu'une fois
+    );
 
     const onRefresh = () => {
         setRefreshing(true);
@@ -71,6 +80,15 @@ export default function InterventionArchiverScreen({ navigation }: Props) {
                 <Text style={styles.client}>Client : {item.nomClient}</Text>
                 <Ionicons name="chevron-forward" size={20} color="#BDC3C7" />
             </View>
+            {item.failure_reason && (
+                <View style={styles.failureContainer}>
+                    <Ionicons name="warning-outline" size={18} color="#E74C3C" style={styles.failureIcon} />
+                    <Text style={styles.failureText}>
+                        <Text style={styles.failureLabel}>Échec : </Text>
+                        {item.failure_reason}
+                    </Text>
+                </View>
+            )}
         </TouchableOpacity>
     );
 
@@ -138,6 +156,29 @@ const styles = StyleSheet.create({
         shadowRadius: 5,
         elevation: 2,
     },
+    failureContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: '#FDEDEC', // Fond rouge très clair et doux
+        padding: 12,
+        borderRadius: 8,
+        marginTop: 12,
+        borderLeftWidth: 4,
+        borderLeftColor: '#E74C3C', // Liseré rouge vif pour l'alerte
+    },
+    failureIcon: {
+        marginRight: 8,
+    },
+    failureText: {
+        flex: 1, // Permet au texte de passer à la ligne proprement s'il est long
+        fontSize: 13,
+        color: '#C0392B', // Rouge foncé pour un bon contraste et une bonne lisibilité
+        lineHeight: 18,
+    },
+    failureLabel: {
+        fontWeight: 'bold',
+    },
+
     cardHeader: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 },
     date: { fontSize: 12, fontWeight: '600', color: '#95A5A6' },
     badge: { backgroundColor: '#ECEFF1', paddingHorizontal: 8, paddingVertical: 2, borderRadius: 4 },

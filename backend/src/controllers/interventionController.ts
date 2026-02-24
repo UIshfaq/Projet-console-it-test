@@ -256,21 +256,21 @@ export const archiverIntervention = async (req: AuthRequest, res: Response): Pro
     const { id } = req.params;
     const technicienIdConnecte = req.userId;
 
+
     try {
         const rowsAffected = await db('interventions')
-            .where({ id: id }) // 1. Cible l'intervention
+            .where({ id: id })
             .whereExists(function() {
-                // 2. Vérifie la permission dans la table intermédiaire
                 this.select('*')
                     .from('intervention_technicians')
                     .whereRaw('intervention_technicians.intervention_id = interventions.id')
-                    // ⚠️ Vérifie le nom de ta colonne : 'user_id' ou 'technician_id' ?
                     .andWhere({ technician_id: technicienIdConnecte });
             })
-            .update({ statut: 'archiver' }); // 3. L'action est ICI, en dehors du callback
+            .update({ statut: 'archiver' });
 
-        // 4. On vérifie le résultat ICI, une fois la requête finie
+
         if (rowsAffected === 0) {
+            console.warn(`⚠️ [Backend] Échec : Intervention introuvable ou non assignée à ce technicien.`);
             res.status(404).json({ message: "Intervention non trouvée ou non autorisée." });
             return;
         }
@@ -278,11 +278,10 @@ export const archiverIntervention = async (req: AuthRequest, res: Response): Pro
         res.status(200).json({ message: "L'intervention est archivée avec succès." });
 
     } catch (e) {
-        console.error("Erreur archivage :", e);
+        console.error("❌ [Backend] Erreur SQL lors de l'archivage :", e);
         res.status(500).json({ message: "Erreur serveur." });
     }
 }
-
 export const modifierNotes = async (req: AuthRequest, res: Response): Promise<void> => {
     const idInterv = req.params.id;
     const idTech = req.userId;
