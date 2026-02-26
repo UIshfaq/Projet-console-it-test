@@ -8,6 +8,7 @@ import { Ionicons } from '@expo/vector-icons';
 
 // Imports types & navigation
 import { RootStackParamList } from "../../types/Navigation";
+import type {InterventionStatus} from "../../types/Intervention"
 
 // Imports composants
 import { InfoDetails } from '../../component/details/infoDetails';
@@ -18,11 +19,14 @@ import { SignatureModal } from "../../component/details/SignatureModal";
 
 // LE LIEN MAGIQUE
 import { useInterventionDetails } from '../../hook/details/useInterventionDetails';
+import {usePdfGenerator} from "../../hook/details/usePdfGenerator";
 
 type Props = StackScreenProps<RootStackParamList, 'Detail'>;
 
 function DetailScreen({ route, navigation }: Props) {
     const { interventionId } = route.params;
+    const { generateAndSharePdf, isDownloading } = usePdfGenerator();
+
 
     // 1. ON APPELLE LE HOOK
     const {
@@ -146,6 +150,19 @@ function DetailScreen({ route, navigation }: Props) {
                     onOK={handleSignatureOK}
                 />
 
+                {intervention && ['termine', 'archiver'].includes(intervention.statut) && (
+                    <TouchableOpacity
+                        style={[styles.pdfButton, isDownloading && styles.pdfButtonDisabled]}
+                        disabled={isDownloading}
+                        onPress={() => generateAndSharePdf(interventionId)}
+                    >
+                        <Ionicons name="document-text" size={20} color="white" />
+                        <Text style={styles.pdfButtonText}>
+                            {isDownloading ? "Génération en cours..." : "Télécharger le PDF"}
+                        </Text>
+                    </TouchableOpacity>
+                )}
+
             </SafeAreaView>
         </KeyboardAvoidingView>
     );
@@ -168,6 +185,31 @@ const styles = StyleSheet.create({
         shadowOpacity: 0.3,
         shadowRadius: 10,
         elevation: 5
+    },
+    pdfButton: {
+        backgroundColor: '#E74C3C', // Un beau rouge pour les PDF
+        flexDirection: 'row',
+        justifyContent: 'center',
+        alignItems: 'center',
+        paddingVertical: 18,
+        borderRadius: 20,
+        marginHorizontal: 20,
+        marginBottom: 20,
+        shadowColor: "#E74C3C",
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.3,
+        shadowRadius: 10,
+        elevation: 5
+    },
+    pdfButtonDisabled: {
+        backgroundColor: '#E08283', // Plus clair quand ça charge
+        shadowOpacity: 0,
+    },
+    pdfButtonText: {
+        color: 'white',
+        fontWeight: 'bold',
+        fontSize: 15,
+        marginLeft: 10
     },
     gpsButtonText: { color: 'white', fontWeight: 'bold', fontSize: 15, marginLeft: 10 },
 });
