@@ -64,6 +64,7 @@ export const usePdfGenerator = () => {
 
                 console.log(`✅ Fichier stocké : ${downloadResult.uri}`);
 
+
                 // 4. On demande au système d'ouvrir la modale de partage native
                 const isAvailable = await Sharing.isAvailableAsync();
                 if (isAvailable) {
