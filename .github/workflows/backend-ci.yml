@@ -1,11 +1,7 @@
 name: CI Backend - Tests Automatiques
 
-# 1. Quand s'exécute le robot ?
-on:
-  push:
-    branches: [ "main" ] # Tu peux aussi ajouter ta branche actuelle si tu veux tester avant le merge !
-  pull_request:
-    branches: [ "main" ]
+# Le robot s'active à chaque push, peu importe la branche !
+on: [push, pull_request]
 
 jobs:
   test-api:
