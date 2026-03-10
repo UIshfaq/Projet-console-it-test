@@ -49,7 +49,11 @@ jobs:
         run: npm install
 
       - name: 🏗️ Construire les tables (Migrations Knex)
-        run: npx knex migrate:latest
+          # On ajoute une petite boucle de retry au cas où la DB est encore en train de chauffer
+        run: |
+          for i in {1..5}; do
+          npx knex migrate:latest && break || sleep 10;
+          done
 
       - name: 🌱 Insérer les données de test (Seeds Knex)
         run: npx knex seed:run
