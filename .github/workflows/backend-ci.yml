@@ -1,0 +1,56 @@
+name: CI Backend - Tests Automatiques
+
+# 1. Quand s'exécute le robot ?
+on:
+  push:
+    branches: [ "main" ] # Tu peux aussi ajouter ta branche actuelle si tu veux tester avant le merge !
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  test-api:
+    runs-on: ubuntu-latest
+
+    # Toutes les commandes npm se feront dans le dossier backend
+    defaults:
+      run:
+        working-directory: ./backend
+
+    steps:
+      - name: 📥 Récupérer le code
+        uses: actions/checkout@v4
+
+      - name: ⚙️ Créer les variables d'environnement (.env)
+        # On crée un faux .env pour que Docker et ton code Node.js puissent se connecter
+        run: |
+          echo "DB_HOST=127.0.0.1" >> .env
+          echo "DB_PORT=3306" >> .env
+          echo "DB_USER=root" >> .env
+          echo "DB_PASSWORD=rootpass" >> .env
+          echo "DB_NAME=bachelor_test_db" >> .env
+          echo "MYSQL_ROOT_PASSWORD=rootpass" >> .env
+          echo "JWT_SECRET=secret_de_test_ci" >> .env
+          # On copie aussi le .env à la racine pour le docker-compose
+          cp .env ../.env
+
+      - name: 🐳 Démarrer MySQL (Docker)
+        # On remonte à la racine pour lancer le docker-compose que tu as configuré
+        working-directory: ./
+        run: docker compose up -d --wait db
+
+      - name: 🟢 Installer Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: 📦 Installer les librairies du backend
+        run: npm install
+
+      - name: 🏗️ Construire les tables (Migrations Knex)
+        run: npx knex migrate:latest
+
+      - name: 🌱 Insérer les données de test (Seeds Knex)
+        run: npx knex seed:run
+
+      - name: 🧪 Lancer les tests d'intégration (Jest)
+        run: npm test
