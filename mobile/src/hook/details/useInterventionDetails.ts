@@ -165,7 +165,7 @@ export const useInterventionDetails = (interventionId: number, navigation: any) 
 
         // CAS ÉCHEC : On vérifie la "Raison" de la modale
         if (finalStatut === 'echec') {
-            if (!echecRaison || echecRaison.trim().length < 5) { // J'ai baissé à 5 caractères pour tester
+            if (!echecRaison || echecRaison.trim().length < 10) { // J'ai baissé à 5 caractères pour tester
                 Alert.alert("Précision requise", "Veuillez donner une raison pour l'échec.");
                 return;
             }
