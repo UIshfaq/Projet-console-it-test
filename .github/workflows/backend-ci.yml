@@ -30,14 +30,13 @@ jobs:
           cp .env ../.env
 
       - name: 🐳 Démarrer MySQL (Docker)
-        # On remonte à la racine pour lancer le docker-compose que tu as configuré
         working-directory: ./
         run: |
-        # On lance MySQL sans le --wait pour éviter le blocage du healthcheck
+          # On lance MySQL sans le --wait pour éviter le blocage du healthcheck
           docker compose up -d db
-        
-        # Script de "Wait-for-it" manuel : on attend que le port 3306 réponde
-         echo "Attente du démarrage de MySQL..."
+            
+          # Script de "Wait-for-it" manuel : on attend que le port 3306 réponde
+          echo "Attente du démarrage de MySQL..."
           timeout 60s bash -c 'until printf "" 2>>/dev/null >/dev/tcp/127.0.0.1/3306; do sleep 2; done'
           echo "MySQL est prêt !"
 
