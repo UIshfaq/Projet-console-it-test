@@ -64,4 +64,77 @@ describe('📅 Tests d\'Intégration : Planning Interventions', () => {
         expect(response.status).toBe(404);
         expect(response.body.message).toBe("L'intervention est introuvable ou vous n'y êtes pas assigné");
     });
+
+    it('devrait clôturer une intervention avec succès (Happy Path)', async () => {
+        const response = await request(app)
+            .put('/api/interventions/2') // On utilise l'ID 2 de tes données de test
+            .set('Authorization', `Bearer ${validToken}`)
+            .send({
+                statut: 'termine',
+                rapport: 'Installation de la fibre effectuée. Tout fonctionne.',
+                notes_technicien: 'Client très satisfait.',
+                signature: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAA...' // Simulation d'une image
+            });
+
+        expect(response.status).toBe(200);
+        expect(response.body.message).toBe("Intervention clôturée avec succès !");
+    });
+
+    it('devrait refuser la clôture si la signature est manquante (Sad Path)', async () => {
+        const response = await request(app)
+            .put('/api/interventions/2')
+            .set('Authorization', `Bearer ${validToken}`)
+            .send({
+                statut: 'termine',
+                rapport: 'J’ai fini mais j’ai oublié de faire signer.',
+                signature: '' // Vide alors que le statut est 'termine'
+            });
+
+        // Ton contrôleur renvoie 400 si la signature manque pour ce statut
+        expect(response.status).toBe(400);
+        expect(response.body.message).toBe("La signature du client est obligatoire pour valider l'intervention.");
+    });
+
+    it('devrait refuser la cloture car rapport manquant', async () => {
+        const response = await request(app)
+            .put('/api/interventions/2') // On utilise l'ID 2 de tes données de test
+            .set('Authorization', `Bearer ${validToken}`)
+            .send({
+                statut: 'termine',
+                rapport: '',
+                notes_technicien: 'Client très satisfait.',
+                signature: '' // Simulation d'une image
+            });
+
+        expect(response.status).toBe(400);
+        expect(response.body.message).toBe("Le rapport est obligatoire pour terminer l'intervention.");
+    });
+
+    it('devrait enregistrer un échec d\'intervention avec une raison (Happy Path)', async () => {
+        const response = await request(app)
+            .put('/api/interventions/2')
+            .set('Authorization', `Bearer ${validToken}`)
+            .send({
+                statut: 'echec',
+                rapport: 'Impossible d\'accéder au boîtier électrique.',
+                failure_reason: 'Le client était absent et le local est verrouillé.' // > 10 caractères
+            });
+
+        expect(response.status).toBe(200);
+        expect(response.body.message).toBe("Intervention clôturée avec succès !");
+    });
+
+    it('Ne devrait pas enregistrer un échec d\'intervention avec une raison (Happy Path)', async () => {
+        const response = await request(app)
+            .put('/api/interventions/2')
+            .set('Authorization', `Bearer ${validToken}`)
+            .send({
+                statut: 'echec',
+                rapport: 'Impossible d\'accéder au boîtier électrique.',
+                failure_reason: '' // > 10 caractères
+            });
+
+        expect(response.status).toBe(400);
+        expect(response.body.message).toBe("La raison de l'échec est obligatoire (min 10 caractères).");
+    });
 });
