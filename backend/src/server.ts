@@ -40,3 +40,5 @@ app.listen(PORT, async () => {
         console.error('Erreur de connexion à la DB au démarrage', err);
     }
 });
+
+export default app;
