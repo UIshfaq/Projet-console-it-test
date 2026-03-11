@@ -31,21 +31,22 @@ export const addIntervention = async (req: Request, res: Response): Promise<void
     const { interventionData, materials, technicianIds } = req.body as AddInterventionBody;
 
     try {
-        await db.transaction(async (trx) => {
+        // ✅ On récupère le résultat de la transaction dans une variable globale à la fonction
+        const createdInterventionId = await db.transaction(async (trx) => {
+
+            const rawDate = interventionData.date ? new Date(interventionData.date) : new Date();
+            const formattedDate: string = rawDate.toISOString().split('T')[0];
 
             // 1. Création de l'intervention de base
             const [newInterventionId] = await trx('interventions')
                 .insert({
                     titre: interventionData.titre,
                     adresse: interventionData.adresse,
-                    date: interventionData.date,
+                    date: formattedDate,
                     statut: 'prévu',
-                    // On garde ta logique hybride (colonne technicien_id + table de liaison)
-                    technicien_id: (technicianIds && technicianIds.length > 0) ? technicianIds[0] : null,
                     description: interventionData.description || '',
                     nomClient: interventionData.nomClient
                 });
-            // Note : Si tu utilises Postgres, ajoute .returning('id') à la fin de l'insert ci-dessus
 
             // 2. Gestion des techniciens (Multi-technique)
             if (technicianIds && technicianIds.length > 0) {
@@ -75,9 +76,18 @@ export const addIntervention = async (req: Request, res: Response): Promise<void
                         .decrement('stock_quantity', item.quantity);
                 }
             }
+
+            // ✅ On retourne l'ID à la fin de la transaction pour le sortir de ce bloc
+            return newInterventionId;
         });
 
-        res.status(201).json({ message: "Intervention créée, équipe assignée et stock mis à jour !" });
+        // ✅ Maintenant, on utilise createdInterventionId qui est bien accessible ici !
+        res.status(201).json({
+            message: "Intervention créée, équipe assignée et stock mis à jour !",
+            id: createdInterventionId,
+            titre: interventionData.titre,
+            statut: 'prévu'
+        });
 
     } catch (error) {
         console.error("Erreur transaction:", error);
