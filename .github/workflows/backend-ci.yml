@@ -17,22 +17,22 @@ jobs:
         run: |
           echo "DB_HOST=127.0.0.1" >> .env
           echo "DB_PORT=3306" >> .env
-          echo "DB_USER=user_test" >> .env # On évite 'root' ici
-          echo "DB_PASSWORD=testpass" >> .env
-          echo "DB_NAME=bachelor_test_db" >> .env
+          echo "DB_USER=root" >> .env
+          echo "DB_PASSWORD=rootpass" >> .env
+          echo "DB_NAME=bachelore_db" >> .env
           echo "MYSQL_ROOT_PASSWORD=rootpass" >> .env
           echo "JWT_SECRET=secret_de_test_ci" >> .env
+          # On copie le .env à la racine pour Docker Compose
           cp .env ../.env
 
       - name: 🐳 Démarrer MySQL (Docker)
         working-directory: ./
         run: |
           docker compose up -d db
-          echo "Attente de MySQL..."
-          # On attend que MySQL soit capable de répondre à une commande ping
-          # On utilise l'utilisateur root car c'est lui qui a les droits d'admin au départ
-          until docker exec mysql_bachelor mysqladmin ping -h localhost -prootpass | grep -q "mysqld is alive"; do
-            echo "MySQL est encore en train de démarrer..."
+          echo "Attente de la santé de MySQL..."
+          # On utilise docker inspect pour attendre le statut 'healthy' défini dans ton compose
+          until [ "`docker inspect -f {{.State.Health.Status}} mysql_bachelor`"=="healthy" ]; do
+            echo "MySQL est en cours de démarrage..."
             sleep 3
           done
           echo "MySQL est prêt et opérationnel !"
@@ -42,14 +42,14 @@ jobs:
         with:
           node-version: '20'
 
-      - name: 📦 Installer les librairies du backend
+      - name: 📦 Installer les librairies
         run: npm install
 
-      - name: 🏗️ Construire les tables (Migrations Knex)
-        run: npx knex migrate:latest
-
-      - name: 🌱 Insérer les données de test (Seeds Knex)
-        run: npx knex seed:run
+      - name: 🏗️ Migrations & Seeds
+        run: |
+          npx knex migrate:latest
+          npx knex seed:run
 
       - name: 🧪 Lancer les tests d'intégration (Jest)
-        run: npm test
+        # On utilise --runInBand pour éviter les conflits de tables
+        run: npm test -- --runInBand

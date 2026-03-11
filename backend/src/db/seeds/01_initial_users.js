@@ -84,6 +84,24 @@ exports.seed = async function(knex) {
         }
     ]);
 
+    const dayBeforeYesterday = new Date(today); dayBeforeYesterday.setDate(dayBeforeYesterday.getDate() - 2);
+
+    await knex('interventions').insert([
+        // ... (tes 4 interventions précédentes restent identiques)
+        {
+            id: 5,
+            titre: 'Réparation Ligne ADSL',
+            adresse: '14 Boulevard Haussmann, Paris',
+            date: dayBeforeYesterday, // Il y a 2 jours
+            statut: 'echec', // ❌ Statut échec
+            nomClient: "Société Batiment Pro",
+            description: "Le client signale une coupure totale.",
+            rapport: "Impossible d'effectuer la réparation.",
+            failure_reason: "Accès au local technique verrouillé. Gardien absent malgré le RDV.", // ✅ Raison de l'échec
+            notes_technicien: "Prévoir une nouvelle intervention avec les clés."
+        }
+    ]);
+
     // --- 5. AFFECTATION DES TECHNICIENS (Multi-tech) ---
     await knex('intervention_technicians').insert([
         // Intervention 1 (Duo) : Sohail (1) + Thomas (2)
@@ -97,7 +115,13 @@ exports.seed = async function(knex) {
         { intervention_id: 3, technician_id: 1 },
 
         // Intervention 4 (Solo) : Thomas (2) (Sohail ne la verra pas)
-        { intervention_id: 4, technician_id: 2 }
+        { intervention_id: 4, technician_id: 2 },
+
+
+
+        // On assigne Sohail (1) à cette intervention en échec
+        { intervention_id: 5, technician_id: 1 }
+
     ]);
 
     // --- 6. AFFECTATION MATÉRIEL (Sur place vs À apporter) ---
