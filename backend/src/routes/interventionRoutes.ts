@@ -9,7 +9,7 @@ router.use(verifyToken);
 
 router.get('/',interventionController.getAllInterventionsNonTermine );
 
-router.post('/addInterv', interventionController.addIntervention );
+router.post('/addInterv', isAdmin,interventionController.addIntervention );
 
 router.get('/all',isAdmin ,interventionController.getAllInterventions );
 

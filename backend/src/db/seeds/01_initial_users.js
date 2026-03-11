@@ -47,8 +47,8 @@ exports.seed = async function(knex) {
             date: today, // Aujourd'hui
             statut: 'en_cours',
             nomClient: "Mme. Dupont",
-            description: "Gros chantier, besoin de 2 techniciens. Attention chien méchant.",
-            technicien_id: null // On utilise la table de liaison maintenant
+            description: "Gros chantier, besoin de 2 techniciens. Attention chien méchant."
+            // Ligne technicien_id supprimée
         },
         {
             id: 2,
@@ -57,8 +57,8 @@ exports.seed = async function(knex) {
             date: today, // Aujourd'hui
             statut: 'prévu',
             nomClient: "Boulangerie Centrale",
-            description: "La box ne s'allume plus.",
-            technicien_id: null
+            description: "La box ne s'allume plus."
+            // Ligne technicien_id supprimée
         },
         {
             id: 3,
@@ -69,8 +69,8 @@ exports.seed = async function(knex) {
             nomClient: "Syndic Oliviers",
             description: "Installation terminée avec succès.",
             rapport: "Tout fonctionne, débit ok.",
-            signature: "signature_client_base64_simulee",
-            technicien_id: null
+            signature: "signature_client_base64_simulee"
+            // Ligne technicien_id supprimée
         },
         {
             id: 4,
@@ -79,8 +79,8 @@ exports.seed = async function(knex) {
             date: tomorrow, // Demain
             statut: 'prévu',
             nomClient: "Mr. Martin",
-            description: "Apporter le nouveau décodeur.",
-            technicien_id: null
+            description: "Apporter le nouveau décodeur."
+            // Ligne technicien_id supprimée
         }
     ]);
 
