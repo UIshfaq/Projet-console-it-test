@@ -1,31 +1,31 @@
-import React, { useState } from 'react';
+import React, {useState} from 'react';
 import {
     View, Text, ScrollView, SafeAreaView, ActivityIndicator,
     TouchableOpacity, Linking, Platform, KeyboardAvoidingView, StyleSheet
 } from "react-native";
-import { StackScreenProps } from '@react-navigation/stack';
-import { Ionicons } from '@expo/vector-icons';
+import {StackScreenProps} from '@react-navigation/stack';
+import {Ionicons} from '@expo/vector-icons';
 
 // Imports types & navigation
-import { RootStackParamList } from "../../types/Navigation";
+import {RootStackParamList} from "../../types/Navigation";
 import type {InterventionStatus} from "../../types/Intervention"
 
 // Imports composants
-import { InfoDetails } from '../../component/details/infoDetails';
-import { MaterialList } from '../../component/details/MaterialList';
-import { ActionButtons } from '../../component/details/ActionButtons';
-import { ClotureModal } from "../../component/details/ClotureModal";
-import { SignatureModal } from "../../component/details/SignatureModal";
+import {InfoDetails} from '../../component/details/infoDetails';
+import {MaterialList} from '../../component/details/MaterialList';
+import {ActionButtons} from '../../component/details/ActionButtons';
+import {ClotureModal} from "../../component/details/ClotureModal";
+import {SignatureModal} from "../../component/details/SignatureModal";
 
 // LE LIEN MAGIQUE
-import { useInterventionDetails } from '../../hook/details/useInterventionDetails';
+import {useInterventionDetails} from '../../hook/details/useInterventionDetails';
 import {usePdfGenerator} from "../../hook/details/usePdfGenerator";
 
 type Props = StackScreenProps<RootStackParamList, 'Detail'>;
 
-function DetailScreen({ route, navigation }: Props) {
-    const { interventionId } = route.params;
-    const { generateAndSharePdf, isDownloading } = usePdfGenerator();
+function DetailScreen({route, navigation}: Props) {
+    const {interventionId} = route.params;
+    const {generateAndSharePdf, isDownloading} = usePdfGenerator();
 
 
     // 1. ON APPELLE LE HOOK
@@ -72,22 +72,22 @@ function DetailScreen({ route, navigation }: Props) {
             android: `geo:0,0?q=${query}`,
             default: `http://googleusercontent.com/maps.google.com/?q=${query}`,
         });
-        if(url) Linking.openURL(url);
+        if (url) Linking.openURL(url);
     };
 
     if (isLoading || !intervention) {
         return (
-            <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-                <ActivityIndicator size="large" color="#6A5AE0" />
-                <Text style={{ marginTop: 10, color: '#666' }}>Chargement...</Text>
+            <View style={{flex: 1, justifyContent: 'center', alignItems: 'center'}}>
+                <ActivityIndicator size="large" color="#6A5AE0"/>
+                <Text style={{marginTop: 10, color: '#666'}}>Chargement...</Text>
             </View>
         );
     }
 
     return (
-        <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : "height"} style={{ flex: 1 }}>
+        <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : "height"} style={{flex: 1}}>
             <SafeAreaView style={styles.container}>
-                <ScrollView contentContainerStyle={{ padding: 20, paddingBottom: 100 }}>
+                <ScrollView contentContainerStyle={{padding: 20, paddingBottom: 100}}>
 
                     {/* 1. INFO GENERALE */}
                     <InfoDetails
@@ -104,7 +104,7 @@ function DetailScreen({ route, navigation }: Props) {
 
                     {/* 3. GROS BOUTON GPS */}
                     <TouchableOpacity style={styles.gpsButton} onPress={ouvrirGPS}>
-                        <Ionicons name="navigate" size={20} color="white" />
+                        <Ionicons name="navigate" size={20} color="white"/>
                         <Text style={styles.gpsButtonText}>DÉMARRER LE TRAJET (GPS)</Text>
                     </TouchableOpacity>
 
@@ -150,13 +150,13 @@ function DetailScreen({ route, navigation }: Props) {
                     onOK={handleSignatureOK}
                 />
 
-                {intervention && ['termine', 'archiver'].includes(intervention.statut) && (
+                {intervention && ['termine', 'archiver','echec'].includes(intervention.statut) && (
                     <TouchableOpacity
                         style={[styles.pdfButton, isDownloading && styles.pdfButtonDisabled]}
                         disabled={isDownloading}
                         onPress={() => generateAndSharePdf(interventionId)}
                     >
-                        <Ionicons name="document-text" size={20} color="white" />
+                        <Ionicons name="document-text" size={20} color="white"/>
                         <Text style={styles.pdfButtonText}>
                             {isDownloading ? "Génération en cours..." : "Télécharger le PDF"}
                         </Text>
@@ -169,7 +169,7 @@ function DetailScreen({ route, navigation }: Props) {
 }
 
 const styles = StyleSheet.create({
-    container: { flex: 1, backgroundColor: '#F0F2F5' },
+    container: {flex: 1, backgroundColor: '#F0F2F5'},
 
     gpsButton: {
         backgroundColor: '#6A5AE0',
@@ -181,7 +181,7 @@ const styles = StyleSheet.create({
         marginBottom: 10,
         marginTop: 10,
         shadowColor: "#6A5AE0",
-        shadowOffset: { width: 0, height: 4 },
+        shadowOffset: {width: 0, height: 4},
         shadowOpacity: 0.3,
         shadowRadius: 10,
         elevation: 5
@@ -196,7 +196,7 @@ const styles = StyleSheet.create({
         marginHorizontal: 20,
         marginBottom: 20,
         shadowColor: "#E74C3C",
-        shadowOffset: { width: 0, height: 4 },
+        shadowOffset: {width: 0, height: 4},
         shadowOpacity: 0.3,
         shadowRadius: 10,
         elevation: 5
@@ -211,7 +211,7 @@ const styles = StyleSheet.create({
         fontSize: 15,
         marginLeft: 10
     },
-    gpsButtonText: { color: 'white', fontWeight: 'bold', fontSize: 15, marginLeft: 10 },
+    gpsButtonText: {color: 'white', fontWeight: 'bold', fontSize: 15, marginLeft: 10},
 });
 
 export default DetailScreen;

@@ -28,7 +28,7 @@ export default function InventaireScreen() {
     // 2. Fonction de récupération (API)
     const fetchInventaire = async () => {
         // ⚠️ Utilise la route globale des matériaux
-        const backendUrl = `${process.env.EXPO_PUBLIC_API_URL}/api/materials`;
+        const backendUrl = `${process.env.EXPO_PUBLIC_API_URL}/api/inventaires/`;
 
         try {
             const response = await axios.get<InventoryItem[]>(backendUrl, {
