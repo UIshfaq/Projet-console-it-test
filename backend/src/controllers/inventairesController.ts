@@ -76,19 +76,24 @@ export const getMaterialsForIntervention = async (req: AuthRequest, res: Respons
 };
 
 export const toggleCheckMaterial = async (req: Request, res: Response): Promise<void> => {
-    // Attention au nommage dans tes routes (:id vs :materialId)
     const interventionId = req.params.id;
     const materialId = req.params.materialId;
     const { is_checked } = req.body;
 
     try {
-        await db('intervention_materials')
+        const updatedRows = await db('intervention_materials')
             .where({
                 intervention_id: interventionId,
                 material_id: materialId
             })
-            // Force 1 ou 0 pour MySQL
             .update({ is_checked: is_checked ? 1 : 0 });
+
+        console.log("Nombre de lignes modifiées en BDD :", updatedRows);
+
+        if (updatedRows === 0) {
+            res.status(404).json({ message: "Liaison introuvable (mauvais IDs)." });
+            return;
+        }
 
         res.status(200).json({ message: "Statut mis à jour" });
     } catch (e) {

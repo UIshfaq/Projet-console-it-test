@@ -30,7 +30,7 @@ export const MaterialList = ({ materials, isLoading, onToggle }: Props) => {
                             <TouchableOpacity
                                 key={index}
                                 style={[styles.itemRow, isChecked && styles.itemRowChecked]}
-                                onPress={() => onToggle(item.id, item.is_checked)}
+                                onPress={() => onToggle((item.id || item.material_id) ?? 0, item.is_checked)}
                             >
                                 <View style={styles.checkboxContainer}>
                                     <Ionicons

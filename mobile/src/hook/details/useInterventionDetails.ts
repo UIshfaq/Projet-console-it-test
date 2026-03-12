@@ -145,6 +145,9 @@ export const useInterventionDetails = (interventionId: number, navigation: any) 
                 { headers: { Authorization: `Bearer ${userToken}` } }
             );
             // Si on arrive ici, tout va bien, le serveur est synchro.
+            // A mettre juste avant ton axios.put ou fetch
+            console.log("🚀 URL appelée :", `/api/interventions/${interventionId}/materials/${idDuMateriel}`);
+            console.log("📦 Données envoyées :", { is_checked: newStatus });
         } catch (e) {
             console.error("Erreur synchro check :", e);
 
