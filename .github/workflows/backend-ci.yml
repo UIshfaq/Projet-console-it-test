@@ -15,13 +15,13 @@ jobs:
 
       - name: ⚙️ Créer les variables d'environnement (.env)
         run: |
-          echo "DB_HOST=127.0.0.1" >> .env
+          echo "DB_HOST=localhost" >> .env
           echo "DB_PORT=3306" >> .env
           echo "DB_USER=root" >> .env
-          echo "DB_PASSWORD=rootpass" >> .env
+          echo "DB_PASSWORD=${{ secrets.DB_PASSWORD }}" >> .env
           echo "DB_NAME=bachelore_db" >> .env
-          echo "MYSQL_ROOT_PASSWORD=rootpass" >> .env
-          echo "JWT_SECRET=secret_de_test_ci" >> .env
+          echo "MYSQL_ROOT_PASSWORD=${{ secrets.DB_PASSWORD_CI }}" >> .env
+          echo "JWT_SECRET=${{ secrets.JWT_SECRET_CI }}" >> .env
           # On copie le .env à la racine pour Docker Compose
           cp .env ../.env
 
