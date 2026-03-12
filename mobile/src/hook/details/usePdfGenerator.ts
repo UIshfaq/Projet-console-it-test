@@ -46,6 +46,7 @@ export const usePdfGenerator = () => {
 
             } else {
 
+
                 // On définit le chemin temporaire où le fichier sera stocké sur le téléphone
                 const fileUri = `${FileSystem.cacheDirectory}Intervention_${interventionId}.pdf`;
                 console.log(`➡️ Téléchargement en cours depuis : ${url}`);
