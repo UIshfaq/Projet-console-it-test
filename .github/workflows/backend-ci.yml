@@ -70,4 +70,4 @@ jobs:
 
       - name: 🧪 Lancer les tests d'intégration (Jest)
         # On utilise --runInBand pour éviter les conflits de tables
-        run: npm test -- --runInBand
+        run: npm test -- --runInBand --forceExit
