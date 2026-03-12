@@ -15,7 +15,7 @@ jobs:
 
       - name: ⚙️ Créer les variables d'environnement (.env)
         run: |
-          echo "DB_HOST=localhost" >> .env
+          echo "DB_HOST=127.0.0.1" >> .env
           echo "DB_PORT=3306" >> .env
           echo "DB_USER=root" >> .env
           echo "DB_PASSWORD=${{ secrets.DB_PASSWORD }}" >> .env
@@ -30,7 +30,6 @@ jobs:
         run: |
           docker compose up -d db
           echo "Attente de la santé de MySQL..."
-          # On utilise docker inspect pour attendre le statut 'healthy' défini dans ton compose
           until [ "`docker inspect -f {{.State.Health.Status}} mysql_bachelor`"=="healthy" ]; do
             echo "MySQL est en cours de démarrage..."
             sleep 3
