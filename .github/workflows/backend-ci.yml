@@ -17,7 +17,7 @@ jobs:
         run: |
           echo "DB_HOST=127.0.0.1" >> .env
           echo "DB_PORT=3306" >> .env
-          echo "DB_USER=root" >> .env
+          echo "DB_USER=${{ secrets.DB_USER }}" >> .env
           echo "DB_PASSWORD=${{ secrets.DB_PASSWORD }}" >> .env
           echo "DB_NAME=bachelore_db" >> .env
           echo "MYSQL_ROOT_PASSWORD=${{ secrets.DB_PASSWORD_CI }}" >> .env
@@ -28,13 +28,24 @@ jobs:
       - name: 🐳 Démarrer MySQL (Docker)
         working-directory: ./
         run: |
-          docker compose up -d db
-          echo "Attente de la santé de MySQL..."
-          until [ "`docker inspect -f {{.State.Health.Status}} mysql_bachelor`"=="healthy" ]; do
-            echo "MySQL est en cours de démarrage..."
-            sleep 3
-          done
-          echo "MySQL est prêt et opérationnel !"
+            # 1. On FORCE Docker à lire le fichier .env que tu as créé à la racine
+            docker compose --env-file .env up -d db
+            
+            echo "⏳ Attente du démarrage de MySQL..."
+            # 2. On attend que l'utilisateur 'admin' soit créé et puisse se connecter à 'bachelore_db'
+            # C'est beaucoup plus sûr qu'un simple ping root !
+            for i in {1..20}; do
+              if docker exec mysql_bachelor mysql -uadmin -ppassword123 -e "SELECT 1" >/dev/null 2>&1; then
+                echo "✅ MySQL est 100% prêt avec l'utilisateur admin !"
+                exit 0
+              fi
+              echo "... Création de la base et de l'utilisateur en cours ($i/20) ..."
+              sleep 4
+            done
+            
+            echo "❌ MySQL n'a pas démarré correctement."
+            docker logs mysql_bachelor
+            exit 1
 
       - name: 🟢 Installer Node.js
         uses: actions/setup-node@v4
@@ -44,10 +55,18 @@ jobs:
       - name: 📦 Installer les librairies
         run: npm install
 
-      - name: 🏗️ Migrations & Seeds
+      - name: 🏗️ Exécuter les Migrations Knex
         run: |
-          npx knex migrate:latest
-          npx knex seed:run
+            # 3. On force explicitement l'hôte IP (127.0.0.1) au lieu de 'localhost' 
+            # pour éviter que Node.js ne se perde avec l'IPv6 dans GitHub Actions
+            export DB_HOST=127.0.0.1
+            export DB_PORT=3306
+            export DB_USER=${{ secrets.DB_USER }}
+            export DB_PASSWORD=${{ secrets.DB_PASSWORD }}
+            export DB_NAME=bachelore_db
+            
+            npx knex migrate:latest
+            npx knex seed:run
 
       - name: 🧪 Lancer les tests d'intégration (Jest)
         # On utilise --runInBand pour éviter les conflits de tables
