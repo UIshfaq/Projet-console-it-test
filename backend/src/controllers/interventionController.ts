@@ -9,8 +9,9 @@ interface AuthRequest extends Request {
 
 interface AddInterventionBody {
     interventionData: Partial<Intervention>;
-    materials?: { id: number; quantity: number }[];
+    materials?: { id: number; quantity: number,toBring?: boolean }[];
     technicianIds?: number[];
+
 }
 
 
@@ -63,7 +64,7 @@ export const addIntervention = async (req: Request, res: Response): Promise<void
                     intervention_id: newInterventionId,
                     material_id: item.id,
                     quantity_required: item.quantity,
-                    to_bring: 1,
+                    to_bring: item.toBring ? 1 : 0,
                     is_checked: 0
                 }));
 
