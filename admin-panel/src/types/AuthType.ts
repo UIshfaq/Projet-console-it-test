@@ -4,6 +4,7 @@ export interface User {
     email: string;
     phone_number: string;
     role: 'admin' | 'technicien'
+    isActive: boolean;
 }
 
 export interface LoginResponse {

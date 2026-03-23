@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 import type { User } from "../../types/AuthType.ts";
@@ -142,7 +143,7 @@ const Techniciens: React.FC = () => {
             });
             const techs = response.data.filter((user: User) => user.role === "technicien");
             setTechniciens(techs);
-        } catch (err) {
+        } catch {
             setError("Erreur lors de la récupération des techniciens");
         } finally {
             setLoading(false);
@@ -164,20 +165,29 @@ const Techniciens: React.FC = () => {
             setIsModalOpen(false);
             setNom(""); setEmail(""); setPassword(""); setPhoneNumber("");
             fetchTechniciens();
-        } catch (err) {
+        } catch {
             alert("Erreur lors de l'ajout du technicien");
         }
     };
 
-    const toggleStatus = async (id: number, currentStatus: boolean) => {
+    const toggleStatus = async (id: number, currentStatus: boolean): Promise<void> => {
         try {
             const token = localStorage.getItem("adminToken");
-            await axios.put(`http://localhost:3000/api/users/status/${id}`, 
-                { isActive: !currentStatus },
+            const nextStatus = !currentStatus;
+
+            // On remplace axios.delete par axios.patch
+            await axios.patch(`http://localhost:3000/api/users/${id}`,
+                { isActive: nextStatus }, // Le payload est correctement passé en 2ème argument
                 { headers: { Authorization: `Bearer ${token}` } }
             );
-            fetchTechniciens();
-        } catch (err) {
+
+            setTechniciens((prev) =>
+                prev.map((tech) =>
+                    tech.id === id ? { ...tech, isActive: nextStatus } : tech
+                )
+            );
+        } catch (error) {
+            console.error("Erreur lors du toggleStatus :", error);
             alert("Erreur lors du changement de statut");
         }
     };
@@ -221,7 +231,7 @@ const Techniciens: React.FC = () => {
                                     </td>
                                     <td style={styles.td}>
                                         <div style={{fontSize: '0.875rem', color: '#374151'}}>{tech.email}</div>
-                                        <div style={{fontSize: '0.75rem', color: '#6b7280'}}>{tech.phoneNumber || 'N/A'}</div>
+                                        <div style={{fontSize: '0.75rem', color: '#6b7280'}}>{tech.phone_number || 'N/A'}</div>
                                     </td>
                                     <td style={styles.td}>
                                         <span style={styles.statusBadge(tech.isActive)}>
@@ -229,7 +239,7 @@ const Techniciens: React.FC = () => {
                                         </span>
                                     </td>
                                     <td style={{...styles.td, textAlign: 'right'}}>
-                                        <button 
+                                        <button
                                             onClick={() => toggleStatus(tech.id, tech.isActive)}
                                             style={{background: 'none', border: 'none', color: tech.isActive ? '#b91c1c' : '#16a34a', cursor: 'pointer', fontWeight: '500', fontSize: '0.875rem'}}
                                         >

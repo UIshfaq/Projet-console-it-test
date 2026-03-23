@@ -38,8 +38,7 @@ export const getProfil = async (req: AuthRequest, res: Response): Promise<void> 
 export const getAllUsers = async (req: Request, res: Response): Promise<void> => {
     try {
         const users = await db('users')
-            .select('id', 'nom', 'email', 'role', 'phone_number', 'created_at')
-            .where({ isActive: true }) // On ne récupère que les actifs (Soft Delete)
+            .select('id', 'nom', 'email', 'role', 'phone_number', 'created_at', 'isActive')
             .orderBy('nom', 'asc'); // Petit bonus UX : tri alphabétique
 
         res.status(200).json(users);
@@ -52,12 +51,13 @@ export const getAllUsers = async (req: Request, res: Response): Promise<void> =>
 
 export const deleteUser = async (req: Request, res: Response): Promise<void> => {
     const userId = req.params.id;
+    const { isActive } = req.body as { isActive?: boolean };
 
     try {
         // Soft Delete : On passe isActive à false (ou 0) au lieu de supprimer la ligne
         const deletedRows = await db('users')
             .where({ id: userId })
-            .update({ isActive: false }); // false sera converti en 0 par Knex pour MySQL
+            .update({ isActive }); // false sera converti en 0 par Knex pour MySQL
 
         if (deletedRows === 0) {
             res.status(404).json({ message: "Utilisateur non trouvé" });
@@ -71,3 +71,5 @@ export const deleteUser = async (req: Request, res: Response): Promise<void> => 
         res.status(500).json({ message: "Erreur serveur" });
     }
 };
+
+
