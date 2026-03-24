@@ -28,6 +28,59 @@ export const getAllInterventions = async (req: Request, res: Response): Promise<
     }
 }
 
+export const getInterventionDetails = async (req: Request, res: Response): Promise<void> => {
+
+    try {
+        const interventionId = req.params.id;
+
+        const intervention = await db('interventions')
+            .where({ id: interventionId })
+            .first();
+
+        if (!intervention) {
+            res.status(404).json({ message: "Intervention introuvable" });
+            return;
+        }
+
+        const materials = await db('intervention_materials')
+            .join('materials', 'intervention_materials.material_id', 'materials.id')
+            .where('intervention_materials.intervention_id', interventionId)
+            .select(
+                'materials.id',
+                'materials.name',
+                'intervention_materials.quantity_required',
+                'intervention_materials.is_checked',
+                'intervention_materials.to_bring'
+            );
+
+        if (materials.length === 0) {
+            res.status(404).json({ message: "Aucun matériel associé à cette intervention" });
+            return;
+        }
+
+
+        const technicians = await db('intervention_technicians')
+            .join('users', 'intervention_technicians.technician_id', 'users.id')
+            .where('intervention_technicians.intervention_id', interventionId)
+            .select('users.id', 'users.nom');
+
+        if (technicians.length === 0) {
+            res.status(404).json({ message: "Aucun technicien assigné à cette intervention" });
+            return;
+        }
+
+        res.status(200).json({
+            ...intervention,
+            materials: materials,
+            technicians: technicians
+        });
+
+    } catch (e) {
+        console.error("Erreur lors de la récupération des détails de l'intervention:", e);
+        res.status(500).json({ message: "Erreur serveur" });
+    }
+}
+
 export const addIntervention = async (req: Request, res: Response): Promise<void> => {
     const { interventionData, materials, technicianIds } = req.body as AddInterventionBody;
 

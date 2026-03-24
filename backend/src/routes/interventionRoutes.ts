@@ -17,6 +17,8 @@ router.get('/archived', interventionController.getAllInterventionsArchived );
 
 router.get('/:id', interventionController.getInterventionById );
 
+router.get('/details/:id',isAdmin, interventionController.getInterventionDetails );
+
 router.put('/:id', interventionController.terminerIntervention );
 
 router.patch('/:id/archive', interventionController.archiverIntervention );
