@@ -71,8 +71,8 @@ export const getInterventionDetails = async (req: Request, res: Response): Promi
 
         res.status(200).json({
             ...intervention,
-            materials: materials,
-            technicians: technicians
+            materials,
+            technicians
         });
 
     } catch (e) {
