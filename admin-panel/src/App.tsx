@@ -6,6 +6,7 @@ import Layout from "./components/Layout.tsx";
 import Techniciens from "./pages/technicien/Techniciens.tsx";
 import Materiel from "./pages/materiels/Materiel.tsx";
 import Interventions from "./pages/Interventions/Interventions.tsx";
+import InterventionDetails from "./pages/Interventions/InterventionDetails.tsx";
 
 function App() {
     return (
@@ -20,6 +21,7 @@ function App() {
                         <Route path="/techniciens" element={<Techniciens />} />
                         <Route path="/materiels" element={<Materiel />} />
                         <Route path="/interventions" element= { <Interventions />} />
+                        <Route path="/interventions/details/:id" element={<InterventionDetails />} />
                     </Route>
                 </Route>
                 <Route path="*" element={<h1>404</h1>} />

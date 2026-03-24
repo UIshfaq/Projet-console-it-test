@@ -53,10 +53,7 @@ export const getInterventionDetails = async (req: Request, res: Response): Promi
                 'intervention_materials.to_bring'
             );
 
-        if (materials.length === 0) {
-            res.status(404).json({ message: "Aucun matériel associé à cette intervention" });
-            return;
-        }
+
 
 
         const technicians = await db('intervention_technicians')

@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import type { Intervention } from "../../types/InterventionType.ts";
 import type { Materiel } from "../../types/MaterielType.ts";
@@ -126,6 +127,8 @@ function Interventions() {
     const [materiel, setMateriel] = useState<Materiel[]>([]);
     const [technicians, setTechnicians] = useState<User[]>([]);
 
+    const navigate = useNavigate();
+
     const [titre, setTitre] = useState('');
     const [nomClient, setNomClient] = useState('');
     const [date, setDate] = useState('');
@@ -246,7 +249,12 @@ function Interventions() {
                                         <span style={styles.statusBadge(inter.statut)}>{inter.statut}</span>
                                     </td>
                                     <td style={{...styles.td, textAlign: 'right'}}>
-                                        <button style={{background: 'none', border: 'none', color: '#2563eb', cursor: 'pointer', fontWeight: '500'}}>Voir</button>
+                                        <button 
+                                            onClick={() => navigate(`/interventions/details/${inter.id}`)}
+                                            style={{background: 'none', border: 'none', color: '#2563eb', cursor: 'pointer', fontWeight: '500'}}
+                                        >
+                                            Voir
+                                        </button>
                                     </td>
                                 </tr>
                             ))}
