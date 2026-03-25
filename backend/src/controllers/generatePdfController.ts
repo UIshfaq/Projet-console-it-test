@@ -4,6 +4,8 @@ import { generateInterventionPdf, PdfData } from "../services/pdf/pdfService";
 
 interface AuthRequest extends Request {
     userId?: number;
+    // Note : Si ton middleware d'auth injecte déjà le rôle (ex: req.role),
+    // tu pourras l'utiliser directement au lieu de refaire une requête DB.
 }
 
 export const generatePdf = async (req: AuthRequest, res: Response): Promise<void> => {
@@ -11,12 +13,8 @@ export const generatePdf = async (req: AuthRequest, res: Response): Promise<void
         const interventionId = req.params.id;
         const userId = req.userId;
 
-        // --- ZONE DE DEBUG ---
-        console.log(`\n➡️ [DEBUG PDF] Requête reçue pour l'intervention ID :`, interventionId);
-        console.log(`➡️ [DEBUG PDF] Utilisateur connecté (ID extrait du token) :`, userId);
-
         if (!userId) {
-            res.status(401).json({ message: "Non autorisé" });
+            res.status(404).json({ message: "Non assigné" });
             return;
         }
 
@@ -25,13 +23,22 @@ export const generatePdf = async (req: AuthRequest, res: Response): Promise<void
             return;
         }
 
-        const pdfData = await db('interventions')
+        // 1. Récupérer le rôle de l'utilisateur qui fait la demande
+        const currentUser = await db('users').select('role').where({ id: userId }).first();
+
+        if (!currentUser) {
+            res.status(401).json({ message: "Utilisateur introuvable." });
+            return;
+        }
+
+        // 2. Construire la requête de base (commune à tout le monde)
+        let query = db('interventions')
             .select(
                 "interventions.id",
                 "interventions.titre",
                 "interventions.adresse",
-                "interventions.description",
                 "interventions.date",
+                "interventions.description",
                 "interventions.nomClient",
                 "interventions.rapport",
                 "interventions.failure_reason",
@@ -40,29 +47,29 @@ export const generatePdf = async (req: AuthRequest, res: Response): Promise<void
             )
             .leftJoin("intervention_technicians", "interventions.id", "intervention_technicians.intervention_id")
             .leftJoin("users", "intervention_technicians.technician_id", "users.id")
-            .where("interventions.id", interventionId)
-            // .where("intervention_technicians.technician_id", userId) <-- ON ENLÈVE CETTE LIGNE
-            .first();
+            .where("interventions.id", interventionId);
 
-        console.log(`➡️ [DEBUG PDF] Résultat SQL :`, pdfData ? "Trouvé !" : "UNDEFINED (La requête n'a rien trouvé !)\n");
-        // ---------------------
+        // 3. LA CORRECTION : Restreindre l'accès SI l'utilisateur est un technicien
+        if (currentUser.role === 'technicien') {
+            query = query.where("intervention_technicians.technician_id", userId);
+        }
+
+        // 4. Exécuter la requête
+        const pdfData = await query.first();
 
         if (!pdfData) {
+            // C'est ici que ton test unitaire s'attend à recevoir la 404 !
             res.status(404).json({ message: "Intervention introuvable ou accès refusé." });
             return;
         }
 
         const pdfBuffer = await generateInterventionPdf(pdfData as PdfData);
 
-        // 2. On prévient le navigateur ou l'application mobile de ce qu'on lui envoie (les Headers)
         res.setHeader('Content-Type', 'application/pdf');
-        // L'option attachment permet de forcer le téléchargement avec un nom propre
         res.setHeader('Content-Disposition', `attachment; filename="intervention_${interventionId}.pdf"`);
         res.setHeader('Content-Length', pdfBuffer.length);
 
-        // 3. On envoie le fichier brut ! (On utilise .send et pas .json)
         res.status(200).send(pdfBuffer);
-
     } catch (error) {
         console.error("Erreur lors de la préparation des données PDF :", error);
         res.status(500).json({ message: "Erreur serveur" });
