@@ -45,6 +45,4 @@ mobile/.env
 
 # Ignorer le .env du backend (à la racine)
 backend/.env
-
 .env
-
