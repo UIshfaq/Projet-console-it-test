@@ -37,10 +37,10 @@ export const generatePdf = async (req: AuthRequest, res: Response): Promise<void
                 "interventions.signature",
                 "users.nom as nomTechnicien"
             )
-            .join("intervention_technicians", "interventions.id", "intervention_technicians.intervention_id")
-            .join("users", "intervention_technicians.technician_id", "users.id")
+            .leftJoin("intervention_technicians", "interventions.id", "intervention_technicians.intervention_id")
+            .leftJoin("users", "intervention_technicians.technician_id", "users.id")
             .where("interventions.id", interventionId)
-            .where("intervention_technicians.technician_id", userId)
+            // .where("intervention_technicians.technician_id", userId) <-- ON ENLÈVE CETTE LIGNE
             .first();
 
         console.log(`➡️ [DEBUG PDF] Résultat SQL :`, pdfData ? "Trouvé !" : "UNDEFINED (La requête n'a rien trouvé !)\n");
