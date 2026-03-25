@@ -9,6 +9,7 @@ export interface PdfData {
     description: string | null;
     nomClient: string;
     rapport: string | null;
+    date: string;
     created_at?: string;
     notes_technicien?: string | null;
     failure_reason?: string | null;
@@ -62,7 +63,7 @@ export const generateInterventionPdf = async (data: PdfData): Promise<Buffer> =>
         doc.font('Helvetica').text(data.adresse, 110, 125);
 
         doc.font('Helvetica-Bold').text("Date:", 50, 140);
-        const dateStr = data.created_at ? new Date(data.created_at).toLocaleDateString() : 'N/A';
+        const dateStr = data.date ? new Date(data.date).toLocaleDateString() : 'N/A';
         doc.font('Helvetica').text(dateStr, 110, 140);
 
         doc.moveTo(margin, 155).lineTo(doc.page.width - margin, 155).strokeColor("#e5e7eb").stroke();

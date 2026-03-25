@@ -31,6 +31,7 @@ export const generatePdf = async (req: AuthRequest, res: Response): Promise<void
                 "interventions.titre",
                 "interventions.adresse",
                 "interventions.description",
+                "interventions.date",
                 "interventions.nomClient",
                 "interventions.rapport",
                 "interventions.failure_reason",
