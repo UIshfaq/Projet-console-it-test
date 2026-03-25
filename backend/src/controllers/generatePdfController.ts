@@ -1,6 +1,6 @@
 import { Request, Response } from "express";
 import db from "../db/db-connection";
-import { buildInterventionPdf, PdfData } from "../services/pdf/pdfService";
+import { generateInterventionPdf, PdfData } from "../services/pdf/pdfService";
 
 interface AuthRequest extends Request {
     userId?: number;
@@ -51,7 +51,7 @@ export const generatePdf = async (req: AuthRequest, res: Response): Promise<void
             return;
         }
 
-        const pdfBuffer = await buildInterventionPdf(pdfData as PdfData);
+        const pdfBuffer = await generateInterventionPdf(pdfData as PdfData);
 
         // 2. On prévient le navigateur ou l'application mobile de ce qu'on lui envoie (les Headers)
         res.setHeader('Content-Type', 'application/pdf');
