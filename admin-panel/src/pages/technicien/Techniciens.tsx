@@ -133,7 +133,7 @@ const Techniciens: React.FC = () => {
     const [nom, setNom] = useState("");
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
-    const [phoneNumber, setPhoneNumber] = useState("");
+    const [phone_number, setPhoneNumber] = useState("");
 
     const fetchTechniciens = async () => {
         try {
@@ -155,7 +155,7 @@ const Techniciens: React.FC = () => {
         e.preventDefault();
         try {
             await axiosClient.post("/auth/register", 
-                { nom, email, password, phoneNumber, role: "technicien" }
+                { nom, email, password, phone_number, role: "technicien" }
             );
             setIsModalOpen(false);
             setNom(""); setEmail(""); setPassword(""); setPhoneNumber("");
@@ -267,7 +267,7 @@ const Techniciens: React.FC = () => {
                             </div>
                             <div style={styles.formGroup}>
                                 <label style={styles.label}>Téléphone</label>
-                                <input style={styles.input} value={phoneNumber} onChange={(e) => setPhoneNumber(e.target.value)} placeholder="06 12 34 56 78" />
+                                <input style={styles.input} value={phone_number} onChange={(e) => setPhoneNumber(e.target.value)} placeholder="06 12 34 56 78" />
                             </div>
                             <div style={styles.formGroup}>
                                 <label style={styles.label}>Mot de passe</label>
