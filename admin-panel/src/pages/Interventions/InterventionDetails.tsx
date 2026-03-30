@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import axiosClient from "../../../api/axiosClient.ts";
+import axiosClient from "../../service/axiosClient";
 import type { Intervention } from "../../types/InterventionType.ts";
 
 const styles = {

@@ -1,12 +1,8 @@
 import { Request, Response } from "express";
 import db from "../db/db-connection";
 import { generateInterventionPdf, PdfData } from "../services/pdf/pdfService";
+import { AuthRequest } from "../middlewares/authMiddleware";  // ← importer la vraie
 
-interface AuthRequest extends Request {
-    userId?: number;
-    // Note : Si ton middleware d'auth injecte déjà le rôle (ex: req.role),
-    // tu pourras l'utiliser directement au lieu de refaire une requête DB.
-}
 
 export const generatePdf = async (req: AuthRequest, res: Response): Promise<void> => {
     try {
