@@ -30,8 +30,7 @@ export const getIntervToday = async (req: Request, res: Response): Promise<void>
         console.error("Erreur SQL Dashboard :", e);
         // Astuce : On renvoie l'erreur précise au Postman pour t'aider à débugger (à retirer en prod)
         res.status(500).json({
-            message: "Erreur lors de la récupération des données",
-            error: e instanceof Error ? e.message : e
+            message: "Erreur lors de la récupération des données"
         });
     }
 };

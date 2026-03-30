@@ -55,6 +55,7 @@ export const addUser = async (req: Request, res: Response): Promise<void> => {
 
 export const login = async (req: Request, res: Response): Promise<void> => {
     try {
+        console.log("📥 Tentative de connexion. Body reçu :", req.body)
         const { email, password } = req.body as LoginBody;
 
         if (!email || !password) {
@@ -87,7 +88,9 @@ export const login = async (req: Request, res: Response): Promise<void> => {
 
         // Création du Token
         // On sécurise le process.env pour éviter que TS râle "possibly undefined"
-        const secret = process.env.JWT_SECRET || 'secret_temporaire';
+        const secret = process.env.JWT_SECRET;
+        if (!secret) throw new Error("JWT_SECRET manquant !");
+
 
         const token = jwt.sign(
             {
@@ -95,7 +98,7 @@ export const login = async (req: Request, res: Response): Promise<void> => {
                 role: user.role
             },
             secret,
-            { expiresIn: '12h' }
+            { expiresIn: '5s' }
         );
 
         res.status(200).json({

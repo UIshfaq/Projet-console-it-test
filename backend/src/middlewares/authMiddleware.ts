@@ -28,7 +28,9 @@ export const verifyToken = (req: Request, res: Response, next: NextFunction): vo
 
     try {
         // Pour éviter que TS râle sur une variable d'env potentiellement undefined
-        const secret = process.env.JWT_SECRET || 'secret_temporaire';
+        const secret = process.env.JWT_SECRET;
+        if (!secret) throw new Error("JWT_SECRET manquant !");
+
 
         // 2. Vérifier et décoder
         const decoded = jwt.verify(token, secret) as DecodedToken;

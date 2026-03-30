@@ -7,6 +7,7 @@ import { Ionicons } from '@expo/vector-icons';
 // 1. On importe le contexte et les types qu'on vient de créer
 import { AuthContext, AuthProvider } from "./src/contextes/AuthContext";
 import { RootStackParamList, TabParamList } from "./src/types/Navigation";
+import { navigationRef } from "./src/navigation/RootNavigation";
 
 import LoginScreen from "./src/pages/authenfications/LoginScreen";
 import HomeScreen from "./src/pages/HomeScreen";
@@ -109,7 +110,7 @@ function AppNavigatorLogic() {
     }
 
     return (
-        <NavigationContainer>
+        <NavigationContainer ref={navigationRef}>
             {userToken == null ? <AuthNavigator /> : <AppNavigator />}
         </NavigationContainer>
     );

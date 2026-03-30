@@ -2,15 +2,22 @@ import express from 'express';
 import cors from 'cors';
 const app = express();
 import db from './db/db-connection';
+import rateLimit from 'express-rate-limit';
 
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ limit: '10mb', extended: true }));
 app.use(cors());
 
-app.use(express.json());
+const loginLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    max: 10, // Limite chaque IP à 10 requêtes par fenêtre
+    message: { message: "Trop de tentatives de connexion, veuillez réessayer dans 15 minutes." }
+});
+
 
 
 import authRoutes from './routes/authRoutes';
+app.use('/api/auth/login', loginLimiter);
 app.use('/api/auth', authRoutes);
 
 import interventionRoutes from './routes/interventionRoutes';

@@ -1,5 +1,5 @@
 import React, { createContext, useState, useEffect, ReactNode } from 'react';
-import { Platform } from 'react-native';
+import { Platform, DeviceEventEmitter } from 'react-native'; // 1. Ajout de DeviceEventEmitter
 import * as SecureStore from 'expo-secure-store';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
@@ -12,10 +12,9 @@ interface AuthContextType {
 }
 
 // 2. Création du contexte
-// On utilise "as AuthContextType" pour éviter de devoir fournir une valeur par défaut complexe ici.
 export const AuthContext = createContext<AuthContextType>({} as AuthContextType);
 
-// 3. Typage des props du Provider (pour que 'children' soit accepté)
+// 3. Typage des props du Provider
 interface AuthProviderProps {
     children: ReactNode;
 }
@@ -40,11 +39,40 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         }
     };
 
+    // 4. On extrait la fonction logout pour pouvoir l'utiliser partout
+    const logout = async () => {
+        setIsLoading(true);
+        try {
+            if (Platform.OS === 'web') {
+                await AsyncStorage.removeItem('userToken');
+            } else {
+                await SecureStore.deleteItemAsync('userToken');
+            }
+            setUserToken(null);
+        } catch (e) {
+            console.error("Erreur suppression token", e);
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
     useEffect(() => {
+        // Au démarrage, on vérifie s'il y a un token
         checkToken();
+
+        // 5. MISE SUR ÉCOUTE : On écoute le signal d'erreur de axiosMobile.ts
+        const listener = DeviceEventEmitter.addListener('custom_force_logout', async () => {
+            console.warn("🔴 [AuthContext] Signal reçu : Éjection de l'utilisateur !");
+            await logout(); // On lance ta propre fonction de déconnexion propre
+        });
+
+        // On nettoie l'écouteur si le composant est détruit
+        return () => {
+            listener.remove();
+        };
     }, []);
 
-    // 4. L'objet value DOIT correspondre à l'interface AuthContextType
+    // 6. L'objet value correspond toujours parfaitement à l'interface
     const authContextValue: AuthContextType = {
         isLoading,
         userToken,
@@ -63,26 +91,12 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
                 setIsLoading(false);
             }
         },
-        logout: async () => {
-            setIsLoading(true);
-            try {
-                if (Platform.OS === 'web') {
-                    await AsyncStorage.removeItem('userToken');
-                } else {
-                    await SecureStore.deleteItemAsync('userToken');
-                }
-                setUserToken(null);
-            } catch (e) {
-                console.error("Erreur suppression token", e);
-            } finally {
-                setIsLoading(false);
-            }
-        }
+        logout // On injecte la fonction qu'on a définie plus haut
     };
 
     return (
         <AuthContext.Provider value={authContextValue}>
             {children}
-            </AuthContext.Provider>
+        </AuthContext.Provider>
     );
 };
