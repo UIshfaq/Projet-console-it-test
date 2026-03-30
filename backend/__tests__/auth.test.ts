@@ -18,7 +18,7 @@ describe('🔑 Tests d\'Intégration : Authentification', () => {
 
         // 2. ACT : Supertest simule l'envoi d'une requête POST
         const response = await request(app)
-            .post('/auth/login')
+            .post('/api/auth/login')
             .send(credentials);
 
         // 3. ASSERT : On vérifie les promesses de ton contrôleur
@@ -38,7 +38,7 @@ describe('🔑 Tests d\'Intégration : Authentification', () => {
 
         // 2. ACT : On simule la requête
         const response = await request(app)
-            .post('/auth/login')
+            .post('/api/auth/login')
             .send(badCredentials);
 
         // 3. ASSERT : On vérifie que ton serveur se défend bien (Code 401)
@@ -55,7 +55,7 @@ describe('🔑 Tests d\'Intégration : Authentification', () => {
 
         // 2. ACT
         const response = await request(app)
-            .post('/auth/login')
+            .post('/api/auth/login')
             .send(incompleteCredentials);
 
         // 3. ASSERT : On attend ton code 400 (Bad Request)

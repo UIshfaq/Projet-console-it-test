@@ -12,7 +12,7 @@ describe('📅 Tests d\'Intégration : Planning Interventions', () => {
     beforeAll(async () => {
         // Login du technicien Sohail (ID: 1)
         const response = await request(app)
-            .post('/auth/login')
+            .post('/api/auth/login')
             .send({ email: 'tech1@example.com', password: 'Password123!' });
         validToken = response.body.token;
     });

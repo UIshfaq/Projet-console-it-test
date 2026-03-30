@@ -21,13 +21,13 @@ describe('Flux d\'Intervention : Admin vers Technicien', () => {
 
         // 1. Simulation : Connexion depuis le Dashboard d'administration
         const adminRes = await request(app)
-            .post('/auth/login')
+            .post('/api/auth/login')
             .send({ email: 'admin@example.com', password: 'Password123!' });
         adminToken = adminRes.body.token;
 
         // 2. Simulation : Connexion depuis l'application React Native
         const techRes = await request(app)
-            .post('/auth/login')
+            .post('/api/auth/login')
             .send({ email: 'tech1@example.com', password: 'Password123!' });
         techToken = techRes.body.token;
         technicienId = techRes.body.user.id;
