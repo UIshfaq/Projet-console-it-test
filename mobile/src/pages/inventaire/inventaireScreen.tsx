@@ -3,17 +3,11 @@ import {
     View, Text, FlatList, ActivityIndicator, StyleSheet,
     Alert, SafeAreaView, TextInput, RefreshControl
 } from 'react-native';
-import axios from 'axios';
+import axiosMobile from '../../api/axiosMobile';
 import { Ionicons } from '@expo/vector-icons';
 import { AuthContext } from '../../contextes/AuthContext';
 
-// 1. Définition du type
-interface InventoryItem {
-    id: number;
-    name: string;
-    reference: string;
-    stock_quantity: number;
-}
+// ... (types)
 
 export default function InventaireScreen() {
     const { userToken } = useContext(AuthContext);
@@ -27,13 +21,8 @@ export default function InventaireScreen() {
 
     // 2. Fonction de récupération (API)
     const fetchInventaire = async () => {
-        // ⚠️ Utilise la route globale des matériaux
-        const backendUrl = `${process.env.EXPO_PUBLIC_API_URL}/api/inventaires/`;
-
         try {
-            const response = await axios.get<InventoryItem[]>(backendUrl, {
-                headers: { Authorization: `Bearer ${userToken}` }
-            });
+            const response = await axiosMobile.get<InventoryItem[]>('/inventaires/');
 
             setMaterials(response.data);
             setFilteredMaterials(response.data); // Init du filtre

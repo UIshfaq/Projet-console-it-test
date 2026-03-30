@@ -3,18 +3,24 @@ import {
     View, Text, FlatList, StyleSheet, ActivityIndicator,
     TouchableOpacity, SafeAreaView, RefreshControl
 } from 'react-native';
-import axios from 'axios';
+import axiosMobile from '../../api/axiosMobile';
 import { Ionicons } from '@expo/vector-icons';
 import { StackScreenProps } from '@react-navigation/stack';
 
-// Imports Types & Contextes
-import {RootStackParamList, TabParamList} from '../../types/Navigation';
 import { AuthContext } from '../../contextes/AuthContext';
 import { Intervention } from '../../types/Intervention';
-import {useFocusEffect} from "@react-navigation/native";
+import { useFocusEffect } from '@react-navigation/native';
 
-type Props = StackScreenProps<RootStackParamList & TabParamList, 'Archives'>;
+import { CompositeScreenProps } from '@react-navigation/native';
+import { BottomTabScreenProps } from '@react-navigation/bottom-tabs';
+import { RootStackParamList, TabParamList } from '../../types/Navigation';
 
+// On combine les types : l'écran appartient à TabParamList ('Archives')
+// mais peut naviguer vers RootStackParamList ('Detail')
+type Props = CompositeScreenProps<
+    BottomTabScreenProps<TabParamList, 'Archives'>,
+    StackScreenProps<RootStackParamList>
+>;
 
 export default function InterventionArchiverScreen({ navigation }: Props) {
     const { userToken } = useContext(AuthContext);
@@ -25,16 +31,10 @@ export default function InterventionArchiverScreen({ navigation }: Props) {
 
     const fetchArchives = async () => {
         try {
-            const url = `${process.env.EXPO_PUBLIC_API_URL}/api/interventions/archived`;
-
-
-            const response = await axios.get(url, {
-                headers: { Authorization: `Bearer ${userToken}` }
-            });
+            const response = await axiosMobile.get('/interventions/archived');
             setArchives(response.data);
 
         } catch (error: any) {
-
             console.error("❌ Erreur API :", error.response?.status, error.response?.data || error.message);
         } finally {
             setLoading(false);

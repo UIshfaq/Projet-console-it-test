@@ -55,7 +55,6 @@ export const addUser = async (req: Request, res: Response): Promise<void> => {
 
 export const login = async (req: Request, res: Response): Promise<void> => {
     try {
-        console.log("📥 Tentative de connexion. Body reçu :", req.body)
         const { email, password } = req.body as LoginBody;
 
         if (!email || !password) {
@@ -98,7 +97,7 @@ export const login = async (req: Request, res: Response): Promise<void> => {
                 role: user.role
             },
             secret,
-            { expiresIn: '5s' }
+            { expiresIn: '6h' }
         );
 
         res.status(200).json({

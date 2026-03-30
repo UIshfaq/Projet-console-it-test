@@ -62,7 +62,6 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 
         // 5. MISE SUR ÉCOUTE : On écoute le signal d'erreur de axiosMobile.ts
         const listener = DeviceEventEmitter.addListener('custom_force_logout', async () => {
-            console.warn("🔴 [AuthContext] Signal reçu : Éjection de l'utilisateur !");
             await logout(); // On lance ta propre fonction de déconnexion propre
         });
 

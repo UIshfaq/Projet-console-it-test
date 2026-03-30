@@ -1,5 +1,5 @@
 import { useState, useEffect, useContext } from 'react';
-import axios from 'axios';
+import axiosMobile from '../../api/axiosMobile';
 import { Alert, Platform } from 'react-native';
 import { AuthContext } from '../../contextes/AuthContext';
 import { Intervention, InterventionStatus } from '../../types/Intervention' // Assure-toi que ces types existent
@@ -33,11 +33,8 @@ export const useInterventionDetails = (interventionId: number, navigation: any) 
 
     // 1. CHARGEMENT DES DONNÉES
     const chargerDescription = async () => {
-        const backendUrl = `${process.env.EXPO_PUBLIC_API_URL}/api/interventions/${interventionId}`;
         try {
-            const response = await axios.get(backendUrl, {
-                headers: { Authorization: `Bearer ${userToken}` }
-            });
+            const response = await axiosMobile.get(`/interventions/${interventionId}`);
             const data = response.data;
             setDetailIntervention(data);
 
@@ -58,11 +55,8 @@ export const useInterventionDetails = (interventionId: number, navigation: any) 
     };
 
     const fetchMaterials = async () => {
-        const backendUrl = `${process.env.EXPO_PUBLIC_API_URL}/api/inventaires/${interventionId}/materials`;
         try {
-            const response = await axios.get(backendUrl, {
-                headers: { Authorization: `Bearer ${userToken}` }
-            });
+            const response = await axiosMobile.get(`/inventaires/${interventionId}/materials`);
             setMaterials(response.data);
         } catch (e) {
             console.error("Erreur récupération matériaux :", e);
@@ -85,13 +79,10 @@ export const useInterventionDetails = (interventionId: number, navigation: any) 
 
     // Mise à jour des notes et rapport
     const modifierRapportNotes = async () => {
-        const backendUrl = `${process.env.EXPO_PUBLIC_API_URL}/api/interventions/${interventionId}/modifier`;
         try {
-            await axios.patch(backendUrl, {
+            await axiosMobile.patch(`/interventions/${interventionId}/modifier`, {
                 rapport: rapport,
                 notes_technicien: notesTechnicien,
-            }, {
-                headers: { Authorization: `Bearer ${userToken}` }
             });
 
             // Mise à jour locale optimiste
@@ -138,12 +129,8 @@ export const useInterventionDetails = (interventionId: number, navigation: any) 
         }));
 
         // 4. ENVOI AU SERVEUR
-        const backendUrl = `${process.env.EXPO_PUBLIC_API_URL}/api/inventaires/${interventionId}/materials/${idDuMateriel}`;
-
         try {
-            await axios.put(backendUrl, { is_checked: newStatus ? 1 : 0 },
-                { headers: { Authorization: `Bearer ${userToken}` } }
-            );
+            await axiosMobile.put(`/inventaires/${interventionId}/materials/${idDuMateriel}`, { is_checked: newStatus ? 1 : 0 });
             // Si on arrive ici, tout va bien, le serveur est synchro.
             // A mettre juste avant ton axios.put ou fetch
             console.log("🚀 URL appelée :", `/api/interventions/${interventionId}/materials/${idDuMateriel}`);
@@ -199,8 +186,6 @@ export const useInterventionDetails = (interventionId: number, navigation: any) 
 
         // 3. --- ENVOI DES DONNÉES ---
         try {
-            const backendUrl = `${process.env.EXPO_PUBLIC_API_URL}/api/interventions/${interventionId}`;
-
             // ASTUCE : Si c'est un échec et que le rapport est vide, on utilise la raison comme rapport
             // Cela évite d'envoyer un rapport vide en BDD
             const rapportFinal = (finalStatut === 'echec' && (!rapport || rapport.trim() === ''))
@@ -218,9 +203,7 @@ export const useInterventionDetails = (interventionId: number, navigation: any) 
                 dataToSend.signature = finalSignature;
             }
 
-            await axios.put(backendUrl, dataToSend, {
-                headers: { Authorization: `Bearer ${userToken}` }
-            });
+            await axiosMobile.put(`/interventions/${interventionId}`, dataToSend);
 
             // Mise à jour locale (Optimiste)
             if (detailIntervention) {
@@ -258,11 +241,8 @@ export const useInterventionDetails = (interventionId: number, navigation: any) 
         if (detailIntervention?.statut === "archiver") return;
 
         const proceed = async () => {
-            const backUrl = `${process.env.EXPO_PUBLIC_API_URL}/api/interventions/${interventionId}/archive`;
-
             try {
-                await axios.patch(backUrl, {}, {
-                    headers: { Authorization: `Bearer ${userToken}` },
+                await axiosMobile.patch(`/interventions/${interventionId}/archive`, {}, {
                     timeout: 8000
                 });
 

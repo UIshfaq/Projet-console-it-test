@@ -14,7 +14,7 @@ import {
     Platform,
 } from 'react-native';
 import { Ionicons, AntDesign } from '@expo/vector-icons';
-import axios from 'axios'
+import axiosMobile from '../../api/axiosMobile';
 
 import { AuthContext } from "../../contextes/AuthContext";
 import { RootStackParamList } from "../../types/Navigation";
@@ -50,12 +50,8 @@ const LoginScreen = ({ navigation }: Props) => {
             return;
         }
 
-
-
-        const backendUrl = `${process.env.EXPO_PUBLIC_API_URL}/api/auth/login`;
-
         try {
-            const response = await axios.post(backendUrl, {
+            const response = await axiosMobile.post('/auth/login', {
                 email: email,
                 password: password,
             });
@@ -68,9 +64,9 @@ const LoginScreen = ({ navigation }: Props) => {
             Alert.alert(`Connexion réussie!`, `Bienvenue, ${user.nom || 'utilisateur'}.`);
 
 
-        } catch (error) {
+        } catch (error: any) {
             console.error("Erreur de connexion:", error);
-            if (axios.isAxiosError(error) && error.response) {
+            if (error.isAxiosError && error.response) {
                 // TS sait maintenant que error.response existe
                 Alert.alert('Erreur', error.response.data.message || 'Erreur inconnue');
             } else {
