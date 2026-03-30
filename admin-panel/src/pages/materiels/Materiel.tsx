@@ -1,5 +1,5 @@
 import {useEffect, useState} from "react";
-import axios from "axios";
+import axiosClient from "../../service/axiosClient";
 import type {Materiel as MaterielType} from "../../types/MaterielType.ts";
 
 const styles = {
@@ -91,11 +91,7 @@ function Materiel() {
 
     const fetchMateriel = async () => {
         try {
-            const response = await axios.get('http://localhost:3000/api/inventaires/', {
-                headers: {
-                    Authorization: `Bearer ${localStorage.getItem('adminToken')}`
-                }
-            });
+            const response = await axiosClient.get('/inventaires/');
             setMateriel(response.data);
             setLoading(false);
         } catch (e) {

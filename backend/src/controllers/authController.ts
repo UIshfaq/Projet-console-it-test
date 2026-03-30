@@ -95,7 +95,7 @@ export const login = async (req: Request, res: Response): Promise<void> => {
                 role: user.role
             },
             secret,
-            { expiresIn: '24h' }
+            { expiresIn: '12h' }
         );
 
         res.status(200).json({

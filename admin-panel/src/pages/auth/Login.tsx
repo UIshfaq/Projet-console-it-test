@@ -1,5 +1,5 @@
 import {useEffect, useState} from "react";
-import axios from "axios";
+import axiosClient from "../../service/axiosClient";
 import type {LoginResponse} from '../../types/AuthType.ts';
 import { useNavigate } from "react-router-dom";
 
@@ -112,8 +112,7 @@ function Login() {
         }
 
         try {
-            const backUrl = 'http://localhost:3000/auth/login';
-            const response = await axios.post<LoginResponse>(backUrl,{
+            const response = await axiosClient.post<LoginResponse>('/auth/login',{
                 email: email,
                 password: password
             });

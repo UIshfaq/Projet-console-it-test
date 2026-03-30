@@ -1,4 +1,4 @@
-import axios from "axios";
+import axiosClient from "../../service/axiosClient";
 import {useEffect, useState} from "react";
 
 const styles = {
@@ -118,13 +118,8 @@ function Dashboard () {
     const [interventions, setInterventions] = useState<any[]>([]);
 
     const fetchInterToday = async () => {
-        const token = localStorage.getItem('adminToken');
         try {
-            const response = await axios.get("http://192.168.1.52:3000/api/dashboard/admin/interventions/today", {
-                headers: {
-                    Authorization: `Bearer ${token}`,
-                },
-            });
+            const response = await axiosClient.get("/dashboard/admin/interventions/today");
             setInterventions(response.data);
         } catch (error) {
             console.error("Error fetching today's interventions:", error);

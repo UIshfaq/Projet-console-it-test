@@ -11,7 +11,7 @@ app.use(express.json());
 
 
 import authRoutes from './routes/authRoutes';
-app.use('/auth', authRoutes);
+app.use('/api/auth', authRoutes);
 
 import interventionRoutes from './routes/interventionRoutes';
 app.use('/api/interventions', interventionRoutes);

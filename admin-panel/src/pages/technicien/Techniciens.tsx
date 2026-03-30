@@ -1,6 +1,6 @@
 
 import React, { useEffect, useState } from "react";
-import axios from "axios";
+import axiosClient from "../../service/axiosClient";
 import type { User } from "../../types/AuthType.ts";
 
 const styles = {
@@ -137,10 +137,7 @@ const Techniciens: React.FC = () => {
 
     const fetchTechniciens = async () => {
         try {
-            const token = localStorage.getItem("adminToken");
-            const response = await axios.get("http://localhost:3000/api/users/all", {
-                headers: { Authorization: `Bearer ${token}` },
-            });
+            const response = await axiosClient.get("/users/all");
             const techs = response.data.filter((user: User) => user.role === "technicien");
             setTechniciens(techs);
         } catch {
@@ -157,10 +154,8 @@ const Techniciens: React.FC = () => {
     const handleAddTechnicien = async (e: React.FormEvent) => {
         e.preventDefault();
         try {
-            const token = localStorage.getItem("adminToken");
-            await axios.post("http://localhost:3000/auth/register", 
-                { nom, email, password, phoneNumber, role: "technicien" },
-                { headers: { Authorization: `Bearer ${token}` } }
+            await axiosClient.post("/auth/register", 
+                { nom, email, password, phoneNumber, role: "technicien" }
             );
             setIsModalOpen(false);
             setNom(""); setEmail(""); setPassword(""); setPhoneNumber("");
@@ -172,13 +167,11 @@ const Techniciens: React.FC = () => {
 
     const toggleStatus = async (id: number, currentStatus: boolean): Promise<void> => {
         try {
-            const token = localStorage.getItem("adminToken");
             const nextStatus = !currentStatus;
 
             // On remplace axios.delete par axios.patch
-            await axios.patch(`http://localhost:3000/api/users/${id}`,
-                { isActive: nextStatus }, // Le payload est correctement passé en 2ème argument
-                { headers: { Authorization: `Bearer ${token}` } }
+            await axiosClient.patch(`/users/${id}`,
+                { isActive: nextStatus }
             );
 
             setTechniciens((prev) =>

@@ -52,7 +52,7 @@ const LoginScreen = ({ navigation }: Props) => {
 
 
 
-        const backendUrl = `${process.env.EXPO_PUBLIC_API_URL}/auth/login`;
+        const backendUrl = `${process.env.EXPO_PUBLIC_API_URL}/api/auth/login`;
 
         try {
             const response = await axios.post(backendUrl, {

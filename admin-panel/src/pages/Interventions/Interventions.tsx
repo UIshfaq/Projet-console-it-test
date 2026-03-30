@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import axios from "axios";
+import axiosClient from "../../service/axiosClient";
 import type { Intervention } from "../../types/InterventionType.ts";
 import type { Materiel } from "../../types/MaterielType.ts";
 import type { User } from "../../types/AuthType.ts";
@@ -140,16 +140,13 @@ function Interventions() {
     const [listeIntervention, setListeIntervention] = useState<{id: number, name: string, quantity: number, toBring: boolean}[]>([]);
     const [isModalOpen, setIsModalOpen] = useState(false);
 
-    const token = localStorage.getItem('adminToken');
-
     const fetchData = async () => {
         setLoading(true);
         try {
-            const headers = { Authorization: `Bearer ${token}` };
             const [resInter, resMat, resTech] = await Promise.all([
-                axios.get('http://localhost:3000/api/interventions/all', { headers }),
-                axios.get('http://localhost:3000/api/inventaires/', { headers }),
-                axios.get('http://localhost:3000/api/users/all', { headers })
+                axiosClient.get('/interventions/all'),
+                axiosClient.get('/inventaires/'),
+                axiosClient.get('/users/all')
             ]);
             setInterventions(resInter.data);
             setMateriel(resMat.data);
@@ -190,11 +187,11 @@ function Interventions() {
             return;
         }
         try {
-            await axios.post('http://localhost:3000/api/interventions/addInterv', {
+            await axiosClient.post('/interventions/addInterv', {
                 interventionData: { titre, adresse, date, nomClient, description, statut: 'prévu' },
                 materials: listeIntervention.map(m => ({ id: m.id, quantity: m.quantity, toBring: m.toBring })),
                 technicianIds: technicianSelected
-            }, { headers: { Authorization: `Bearer ${token}` } });
+            });
             setIsModalOpen(false);
             setListeIntervention([]);
             setTechnicianSelected([]);

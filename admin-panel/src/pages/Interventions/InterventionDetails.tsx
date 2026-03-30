@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import axios from "axios";
+import axiosClient from "../../service/axiosClient";
 import type { Intervention } from "../../types/InterventionType.ts";
 
 const styles = {
@@ -139,15 +139,11 @@ function InterventionDetails() {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
 
-    const token = localStorage.getItem('adminToken');
-
     useEffect(() => {
         const fetchDetails = async () => {
             setLoading(true);
             try {
-                const response = await axios.get(`http://localhost:3000/api/interventions/details/${id}`, {
-                    headers: { Authorization: `Bearer ${token}` }
-                });
+                const response = await axiosClient.get(`/interventions/details/${id}`);
                 setIntervention(response.data);
             } catch (err) {
                 console.error('Error fetching intervention details:', err);
@@ -158,7 +154,7 @@ function InterventionDetails() {
         };
 
         if (id) fetchDetails();
-    }, [id, token]);
+    }, [id]);
 
     if (loading) return <div style={{padding: '3rem', textAlign: 'center', color: '#6b7280'}}>Chargement des détails...</div>;
     if (error || !intervention) return <div style={{padding: '3rem', textAlign: 'center', color: '#b91c1c'}}>{error || 'Intervention introuvable'}</div>;
