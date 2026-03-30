@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import axiosClient from "../../service/axiosClient";
+import axiosClient from "../../../api/axiosClient.ts";
 import type { Intervention } from "../../types/InterventionType.ts";
 import type { Materiel } from "../../types/MaterielType.ts";
 import type { User } from "../../types/AuthType.ts";

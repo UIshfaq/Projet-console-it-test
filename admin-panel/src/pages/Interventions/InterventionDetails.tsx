@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import axiosClient from "../../service/axiosClient";
+import axiosClient from "../../../api/axiosClient.ts";
 import type { Intervention } from "../../types/InterventionType.ts";
 
 const styles = {
@@ -125,6 +125,27 @@ const styles = {
         maxWidth: '100%',
         maxHeight: '150px',
     },
+    pdfButton: {
+        display: 'flex',
+        alignItems: 'center',
+        gap: '0.5rem',
+        padding: '0.625rem 1.25rem',
+        borderRadius: '8px',
+        fontSize: '0.875rem',
+        fontWeight: '600',
+        cursor: 'pointer',
+        transition: 'all 0.2s',
+        border: '1px solid #e5e7eb',
+    },
+    previewBtn: {
+        backgroundColor: 'white',
+        color: '#374151',
+    },
+    downloadBtn: {
+        backgroundColor: '#2563eb',
+        color: 'white',
+        border: 'none',
+    },
     emptyState: {
         color: '#9ca3af',
         fontStyle: 'italic',
@@ -139,6 +160,34 @@ function InterventionDetails() {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
 
+    const fetchApercuDownloadPdf = async (mode: 'preview' | 'download') => {
+        try {
+            const response = await axiosClient.get(`/generate-pdf/${id}`, {
+                responseType: 'blob'
+            });
+
+            const blob = new Blob([response.data], { type: 'application/pdf' });
+            const url = window.URL.createObjectURL(blob);
+
+            if (mode === 'preview') {
+                window.open(url, '_blank');
+            } else {
+                const link = document.createElement('a');
+                link.href = url;
+                link.setAttribute('download', `intervention_${id}.pdf`);
+                document.body.appendChild(link);
+                link.click();
+                link.remove();
+            }
+
+            setTimeout(() => window.URL.revokeObjectURL(url), 100);
+            
+        } catch (err) {
+            console.error('Error fetching PDF:', err);
+            alert("Erreur lors de la génération du PDF.");
+        }
+    };
+
     useEffect(() => {
         const fetchDetails = async () => {
             setLoading(true);
@@ -152,6 +201,7 @@ function InterventionDetails() {
                 setLoading(false);
             }
         };
+
 
         if (id) fetchDetails();
     }, [id]);
@@ -174,6 +224,25 @@ function InterventionDetails() {
                     </div>
                     <p style={{color: '#6b7280', margin: 0}}>Intervention #{intervention.id} • Créée le {intervention.created_at ? new Date(intervention.created_at).toLocaleDateString() : 'N/A'}</p>
                 </div>
+
+                {(intervention.statut === 'termine' || intervention.statut === 'echec') && (
+                    <div style={{display: 'flex', gap: '0.75rem'}}>
+                        <button 
+                            style={{...styles.pdfButton, ...styles.previewBtn}} 
+                            onClick={() => fetchApercuDownloadPdf('preview')}
+                        >
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                            Aperçu PDF
+                        </button>
+                        <button 
+                            style={{...styles.pdfButton, ...styles.downloadBtn}} 
+                            onClick={() => fetchApercuDownloadPdf('download')}
+                        >
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                            Télécharger PDF
+                        </button>
+                    </div>
+                )}
             </header>
 
             <div style={styles.grid}>
