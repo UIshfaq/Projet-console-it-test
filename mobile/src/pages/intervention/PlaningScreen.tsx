@@ -1,6 +1,6 @@
 import React, { useState, useContext, useCallback, useLayoutEffect } from 'react';
 import { View, Text, FlatList, StyleSheet, SafeAreaView, ActivityIndicator, TextInput, ListRenderItem } from 'react-native';
-import axios from "axios";
+import axiosMobile from '../../api/axiosMobile';
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect, CompositeNavigationProp } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
@@ -31,13 +31,10 @@ function InterventionScreen({ navigation }: Props) {
     const { userToken } = useContext(AuthContext);
 
     const afficherInterventions = async () => {
-        const backendUrl = `${process.env.EXPO_PUBLIC_API_URL}/api/interventions/`;
         if (!userToken) return;
 
         try {
-            const response = await axios.get<Intervention[]>(backendUrl, {
-                headers: { Authorization: `Bearer ${userToken}` }
-            });
+            const response = await axiosMobile.get<Intervention[]>('interventions/')
             setInterventions(response.data);
             setFilteredInterventions(response.data);
         } catch (error: any) {

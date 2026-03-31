@@ -29,4 +29,5 @@ export interface Intervention {
 
     // Champs souvent ajoutés par l'API (Jointures) même si pas dans la table principale
     materials?: any[];
+    equipe?: any[];
 }

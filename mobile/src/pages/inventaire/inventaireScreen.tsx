@@ -7,14 +7,14 @@ import axiosMobile from '../../api/axiosMobile';
 import { Ionicons } from '@expo/vector-icons';
 import { AuthContext } from '../../contextes/AuthContext';
 
-// ... (types)
+import {Material} from "../../types/Materiel";
 
 export default function InventaireScreen() {
     const { userToken } = useContext(AuthContext);
 
     // États
-    const [materials, setMaterials] = useState<InventoryItem[]>([]);
-    const [filteredMaterials, setFilteredMaterials] = useState<InventoryItem[]>([]);
+    const [materials, setMaterials] = useState<Material[]>([]);
+    const [filteredMaterials, setFilteredMaterials] = useState<Material[]>([]);
     const [searchQuery, setSearchQuery] = useState('');
     const [isLoading, setIsLoading] = useState(true);
     const [isRefreshing, setIsRefreshing] = useState(false);
@@ -22,7 +22,7 @@ export default function InventaireScreen() {
     // 2. Fonction de récupération (API)
     const fetchInventaire = async () => {
         try {
-            const response = await axiosMobile.get<InventoryItem[]>('/inventaires/');
+            const response = await axiosMobile.get<Material[]>('/inventaires/');
 
             setMaterials(response.data);
             setFilteredMaterials(response.data); // Init du filtre
@@ -63,7 +63,7 @@ export default function InventaireScreen() {
     };
 
     // 4. Rendu d'une ligne
-    const renderItem = ({ item }: { item: InventoryItem }) => {
+    const renderItem = ({ item }: { item: Material }) => {
         // Logique visuelle : Stock critique (< 10)
         const isLowStock = item.stock_quantity < 10;
 

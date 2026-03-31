@@ -2,7 +2,7 @@ import React, {useContext, useEffect, useState} from "react";
 import { StyleSheet, Text, View, TouchableOpacity, SafeAreaView, ScrollView, Alert } from "react-native";
 import { AuthContext } from "../../contextes/AuthContext";
 import { Ionicons } from '@expo/vector-icons';
-import axios from "axios";
+import axiosMobile from "../../api/axiosMobile";
 
 interface UserProfile {
     id: number;
@@ -21,12 +21,7 @@ function ProfileScreen() {
     const fetchProfile = async () => {
 
         try {
-            const backendUrl = `${process.env.EXPO_PUBLIC_API_URL}/api/users/me`;
-            const response = await axios.get<UserProfile>(backendUrl, {
-                headers: {
-                    Authorization: `Bearer ${userToken}`
-                }
-            });
+            const response = await axiosMobile.get<UserProfile>('/users/me');
             setProfileData(response.data);
         } catch (error) {
             console.error("Erreur API :", error);

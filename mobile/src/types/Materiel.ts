@@ -7,5 +7,5 @@ export interface Material {
     quantity_required: number;
     to_bring: boolean | number; // L'API renvoie parfois 0/1 ou true/false
     is_checked?: boolean | number;
-    stock_quantity?: number; // Pour l'écran d'inventaire global
+    stock_quantity: number; // Pour l'écran d'inventaire global
 }

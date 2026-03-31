@@ -36,6 +36,7 @@ export const InfoDetails = ({ intervention, onOpenGPS }: Props) => {
             <InfoRow icon="person" label="Client" value={intervention.nomClient || "Client inconnu"} />
             <InfoRow icon="location" label="Adresse" value={intervention.adresse || "Non spécifiée"} isAddress={true} />
             <InfoRow icon="information-circle" label="Description" value={intervention.description || "Aucune description"} />
+            <InfoRow icon="person" label="Equipe" value={intervention.equipe} />
         </View>
     );
 };
