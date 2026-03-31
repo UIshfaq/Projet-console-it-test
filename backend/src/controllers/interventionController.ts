@@ -246,6 +246,7 @@ export const getInterventionById = async (req: AuthRequest, res: Response): Prom
 
 
 
+
 export const terminerIntervention = async (req: AuthRequest, res: Response): Promise<void> => {
     const { id } = req.params;
     // On type le body explicitement ici aussi
