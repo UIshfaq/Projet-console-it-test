@@ -7,6 +7,7 @@ import {  BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
 import { AuthContext } from "../contextes/AuthContext";
 import { RootStackParamList, TabParamList } from "../types/Navigation";
 import {CompositeNavigationProp} from "@react-navigation/native";
+import {useNetwork} from "../contextes/NetworkContext";
 
 
 type HomeScreenNavigationProp = CompositeNavigationProp<
@@ -42,6 +43,7 @@ const QuickActionButton = ({ icon, title, subtitle, color, onPress }: QuickActio
 
 function HomeScreen({ navigation }: Props) {
     const { logout } = useContext(AuthContext);
+    const { isConnected } = useNetwork();
 
     const today = new Date().toLocaleDateString('fr-FR', {
         weekday: 'long',

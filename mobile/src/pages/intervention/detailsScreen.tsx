@@ -1,4 +1,4 @@
-import React, {useState} from 'react';
+import React from 'react';
 import {
     View, Text, ScrollView, SafeAreaView, ActivityIndicator,
     TouchableOpacity, Linking, Platform, KeyboardAvoidingView, StyleSheet
@@ -11,7 +11,6 @@ import {Ionicons} from '@expo/vector-icons';
 
 // Imports types & navigation
 import {RootStackParamList} from "../../types/Navigation";
-import type {InterventionStatus} from "../../types/Intervention"
 
 // Imports composants
 import {InfoDetails} from '../../component/details/infoDetails';
@@ -38,7 +37,6 @@ function DetailScreen({route, navigation}: Props) {
         notesTechnicien: notes,
         setNotesTechnicien: setNotes,
         modifierRapportNotes: saveNotes,
-        cloturerInterv: closeIntervention,
 
         // Variables directes
         materials,
@@ -53,7 +51,7 @@ function DetailScreen({route, navigation}: Props) {
         // Variables UI & Modales
         isFailing, setIsFailing,
         echecRaison, setEchecRaison,
-        isClotureModalVisible, setIsClotureModalVisible,
+        isClotureModalVisible,
         setIsClotureModalVisible: setClotureVisible,
         isSignatureVisible, setSignatureVisible,
 
@@ -139,7 +137,10 @@ function DetailScreen({route, navigation}: Props) {
                 <ClotureModal
                     visible={isClotureModalVisible}
                     onClose={() => setClotureVisible(false)}
-                    onConfirmSuccess={() => cloturerInterv('termine')}
+                    onConfirmSuccess={() => {
+                        setClotureVisible(false);
+                        setSignatureVisible(true);
+                    }}
                     onConfirmFailure={() => cloturerInterv('echec')}
                     isFailingMode={isFailing}
                     setFailingMode={setIsFailing}
