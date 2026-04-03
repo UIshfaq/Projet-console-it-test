@@ -1,13 +1,16 @@
-import React, { useContext } from "react";
+import React, {useContext, useEffect} from "react";
 import { NavigationContainer } from "@react-navigation/native";
 import { createStackNavigator } from "@react-navigation/stack";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { Ionicons } from '@expo/vector-icons';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 // 1. On importe le contexte et les types qu'on vient de créer
 import { AuthContext, AuthProvider } from "./src/contextes/AuthContext";
 import { RootStackParamList, TabParamList } from "./src/types/Navigation";
 import { navigationRef } from "./src/navigation/RootNavigation";
+import { initDB } from "./src/services/database";
 
 import LoginScreen from "./src/pages/authenfications/LoginScreen";
 import HomeScreen from "./src/pages/HomeScreen";
@@ -17,6 +20,9 @@ import ArchiverScreen from "./src/pages/intervention/intervArchiverScreen";
 import LoadingScreen from "./src/pages/authenfications/LoadScreen";
 import InventaireScreen from "./src/pages/inventaire/inventaireScreen";
 import ProfileScreen from "./src/pages/authenfications/ProfileScreen";
+import {NetworkProvider, useNetwork} from "./src/contextes/NetworkContext";
+import {View,Text} from "react-native";
+import {syncInterventionsDown, syncUpdatesUp} from "./src/services/sync";
 
 // 3. C'est ICI la magie : on injecte nos types dans les créateurs de navigation
 const Stack = createStackNavigator<RootStackParamList>();
@@ -88,6 +94,7 @@ const TabNavigator = () => (
 );
 
 const AppNavigator = () => (
+
     <Stack.Navigator screenOptions={{
         headerStyle: { elevation: 0, shadowOpacity: 0, borderBottomWidth: 1, borderBottomColor: '#EEE' },
         headerTitleStyle: { fontWeight: 'bold' }
@@ -101,25 +108,87 @@ const AppNavigator = () => (
     </Stack.Navigator>
 );
 
-function AppNavigatorLogic() {
-    // Ici, le contexte est maintenant typé !
-    const { isLoading, userToken } = useContext(AuthContext);
+    function AppNavigatorLogic() {
+         const { isLoading, userToken, userId } = useContext(AuthContext); // Récupère userId
+         const { isConnected } = useNetwork();
+         const insets = useSafeAreaInsets();
+
+         useEffect(() => {
+             const handleSync = async () => {
+                 // CRITIQUE : On ajoute la vérification de userToken
+                 // Si userToken est null, on ne tente rien car l'API rejettera la requête
+                 if (isConnected && userToken && userId) {
+                     try {
+                         console.log("🌐 Réseau et Token OK : Lancement synchro...");
+                         console.log("✅ Base de données SQLite locale initialisée");
+                         await syncUpdatesUp();
+                         await syncInterventionsDown(userId);
+                         console.log("✅ Synchronisation complète terminée avec succès.");
+                     } catch (error: any) {
+                         // Si l'erreur est une 401 ici, c'est que le token en cache est périmé
+                         // L'interceptor axios gérera la déconnexion automatique
+                         if (error.response?.status === 401) {
+                             console.warn("🔒 [Auth] Token expiré. Déconnexion en cours...");
+                         } else {
+                             console.error("Erreur lors de la synchro auto", error);
+                         }
+                     }
+                 }
+             };
+
+             handleSync();
+         }, [isConnected, userToken, userId]);
 
     if (isLoading) {
         return <LoadingScreen />;
     }
 
     return (
-        <NavigationContainer ref={navigationRef}>
-            {userToken == null ? <AuthNavigator /> : <AppNavigator />}
-        </NavigationContainer>
+        <>
+            {!isConnected && (
+                <View style={{
+                    backgroundColor: '#E74C3C',
+                    // On remplace le 40 statique par la marge dynamique de l'appareil
+                    // On ajoute 10 pixels de padding supplémentaire pour aérer le texte
+                    paddingTop: insets.top + 10,
+                    paddingBottom: 10,
+                    alignItems: 'center',
+                    zIndex: 999
+                }}>
+                    <Text style={{ color: '#FFF', fontWeight: 'bold', fontSize: 12 }}>
+                        Mode hors-ligne - Synchronisation en pause
+                    </Text>
+                </View>
+            )}
+            <NavigationContainer ref={navigationRef}>
+                {userToken == null ? <AuthNavigator /> : <AppNavigator />}
+            </NavigationContainer>
+        </>
     );
 }
-
 export default function App() {
+
+    useEffect(() => {
+        const setupDatabase = async () => {
+            try {
+                await initDB();
+            } catch (e) {
+                console.warn("Échec du chargement de la base de données");
+            }
+        };
+
+        setupDatabase();
+    }, []);
+
+
     return (
-        <AuthProvider>
-            <AppNavigatorLogic />
-        </AuthProvider>
+        // Le SafeAreaProvider devient le parent absolu de ton application
+        <SafeAreaProvider>
+            <AuthProvider>
+                <NetworkProvider>
+                    <AppNavigatorLogic />
+                </NetworkProvider>
+            </AuthProvider>
+        </SafeAreaProvider>
     );
 }
