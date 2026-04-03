@@ -3,7 +3,10 @@ import {
     View, Text, ScrollView, SafeAreaView, ActivityIndicator,
     TouchableOpacity, Linking, Platform, KeyboardAvoidingView, StyleSheet
 } from "react-native";
-import {StackScreenProps} from '@react-navigation/stack';
+// Pour typer la prop "navigation" dans un composant classique
+
+// Pour typer l'écran entier (navigation + route params)
+import { StackScreenProps } from '@react-navigation/stack';
 import {Ionicons} from '@expo/vector-icons';
 
 // Imports types & navigation
