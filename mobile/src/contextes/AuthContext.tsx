@@ -1,100 +1,100 @@
-import React, { createContext, useState, useEffect, ReactNode } from 'react';
-import { Platform, DeviceEventEmitter } from 'react-native'; // 1. Ajout de DeviceEventEmitter
-import * as SecureStore from 'expo-secure-store';
+import React, { createContext, useState, useEffect, useCallback } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as SecureStore from 'expo-secure-store';
+import { DeviceEventEmitter, Platform } from 'react-native';
 
-// 1. Définition stricte de ce que contient le contexte
-interface AuthContextType {
-    isLoading: boolean;
-    userToken: string | null;
-    login: (token: string) => Promise<void>;
-    logout: () => Promise<void>;
-}
+export const AuthContext = createContext<any>(null);
 
-// 2. Création du contexte
-export const AuthContext = createContext<AuthContextType>({} as AuthContextType);
+const getStoredToken = async (): Promise<string | null> => {
+    if (Platform.OS === 'web') return AsyncStorage.getItem('userToken');
+    const secureToken = await SecureStore.getItemAsync('userToken');
+    if (secureToken) return secureToken;
+    // Fallback pour migrer les anciennes sessions stockées uniquement en AsyncStorage
+    return AsyncStorage.getItem('userToken');
+};
 
-// 3. Typage des props du Provider
-interface AuthProviderProps {
-    children: ReactNode;
-}
+const setStoredToken = async (token: string): Promise<void> => {
+    if (Platform.OS === 'web') {
+        await AsyncStorage.setItem('userToken', token);
+        return;
+    }
+    await SecureStore.setItemAsync('userToken', token);
+    // Copie de compat pour anciens chemins de lecture
+    await AsyncStorage.setItem('userToken', token);
+};
 
-export const AuthProvider = ({ children }: AuthProviderProps) => {
-    const [isLoading, setIsLoading] = useState<boolean>(true);
+const clearStoredToken = async (): Promise<void> => {
+    await AsyncStorage.removeItem('userToken');
+    if (Platform.OS !== 'web') {
+        await SecureStore.deleteItemAsync('userToken');
+    }
+};
+
+export const AuthProvider = ({ children }: any) => {
     const [userToken, setUserToken] = useState<string | null>(null);
+    const [userId, setUserId] = useState<number | null>(null); // <-- AJOUT DE L'ID
+    const [isLoading, setIsLoading] = useState(true);
 
-    const checkToken = async () => {
-        try {
-            let token: string | null = null;
-            if (Platform.OS === 'web') {
-                token = await AsyncStorage.getItem('userToken');
-            } else {
-                token = await SecureStore.getItemAsync('userToken');
-            }
-            setUserToken(token);
-        } catch (e) {
-            console.error("Erreur lecture token", e);
-        } finally {
-            setIsLoading(false);
-        }
-    };
-
-    // 4. On extrait la fonction logout pour pouvoir l'utiliser partout
-    const logout = async () => {
-        setIsLoading(true);
-        try {
-            if (Platform.OS === 'web') {
-                await AsyncStorage.removeItem('userToken');
-            } else {
-                await SecureStore.deleteItemAsync('userToken');
-            }
-            setUserToken(null);
-        } catch (e) {
-            console.error("Erreur suppression token", e);
-        } finally {
-            setIsLoading(false);
-        }
-    };
-
-    useEffect(() => {
-        // Au démarrage, on vérifie s'il y a un token
-        checkToken();
-
-        // 5. MISE SUR ÉCOUTE : On écoute le signal d'erreur de axiosMobile.ts
-        const listener = DeviceEventEmitter.addListener('custom_force_logout', async () => {
-            await logout(); // On lance ta propre fonction de déconnexion propre
-        });
-
-        // On nettoie l'écouteur si le composant est détruit
-        return () => {
-            listener.remove();
-        };
+    // Définir logout avant les useEffect qui l'utilisent
+    const logout = useCallback(async () => {
+        await clearStoredToken();
+        await AsyncStorage.removeItem('userId');
+        setUserToken(null);
+        setUserId(null);
     }, []);
 
-    // 6. L'objet value correspond toujours parfaitement à l'interface
-    const authContextValue: AuthContextType = {
-        isLoading,
-        userToken,
-        login: async (token: string) => {
-            setIsLoading(true);
+    const login = useCallback(async (token: string, id: number) => {
+        try {
+            await setStoredToken(token);
+            await AsyncStorage.setItem('userId', id.toString()); // On stocke l'ID
+
+            setUserToken(token);
+            setUserId(id);
+        } catch (e) {
+            console.error(e);
+        }
+    }, []);
+
+    // Au démarrage de l'app : on récupère le Token ET l'ID
+    useEffect(() => {
+        const loadStorageData = async () => {
             try {
-                if (Platform.OS === 'web') {
-                    await AsyncStorage.setItem('userToken', token);
-                } else {
-                    await SecureStore.setItemAsync('userToken', token);
-                }
-                setUserToken(token);
+                const token = await getStoredToken();
+                const id = await AsyncStorage.getItem('userId');
+
+                if (token) setUserToken(token);
+                if (id) setUserId(parseInt(id, 10)); // On convertit le texte en nombre
             } catch (e) {
-                console.error("Erreur sauvegarde token", e);
+                console.log("Erreur chargement storage", e);
             } finally {
                 setIsLoading(false);
             }
-        },
-        logout // On injecte la fonction qu'on a définie plus haut
-    };
+        };
+        loadStorageData();
+    }, []);
+
+    // Écouter l'événement force_logout émis par l'interceptor axios
+    useEffect(() => {
+        const subscription = DeviceEventEmitter.addListener('custom_force_logout', () => {
+            // Ne logout QUE si l'utilisateur est VRAIMENT connecté
+            // (évite les faux positifs lors de la première synchro)
+            if (userToken) {
+                console.log("🔒 Déconnexion forcée par l'API (401)");
+                logout();
+            }
+        });
+
+        return () => subscription.remove();
+    }, [userToken, logout]);
 
     return (
-        <AuthContext.Provider value={authContextValue}>
+        <AuthContext.Provider value={{
+            userToken,
+            userId, // <-- ON EXPOSE L'ID ICI
+            isLoading,
+            login,
+            logout
+        }}>
             {children}
         </AuthContext.Provider>
     );

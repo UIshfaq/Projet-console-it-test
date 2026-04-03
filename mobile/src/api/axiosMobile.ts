@@ -12,15 +12,16 @@ const getToken = async () => {
     if (Platform.OS === 'web') {
         return await AsyncStorage.getItem('userToken');
     } else {
-        return await SecureStore.getItemAsync('userToken');
+        const secureToken = await SecureStore.getItemAsync('userToken');
+        if (secureToken) return secureToken;
+        return await AsyncStorage.getItem('userToken');
     }
 };
 
 // Fonction utilitaire pour supprimer le token selon la plateforme
 const removeToken = async () => {
-    if (Platform.OS === 'web') {
-        await AsyncStorage.removeItem('userToken');
-    } else {
+    await AsyncStorage.removeItem('userToken');
+    if (Platform.OS !== 'web') {
         await SecureStore.deleteItemAsync('userToken');
     }
 };
@@ -37,7 +38,16 @@ axiosMobile.interceptors.request.use(async (config) => {
 axiosMobile.interceptors.response.use(
     (response) => response,
     async (error) => {
-        if (error.response && (error.response.status === 401 || error.response.status === 403)) {
+        const status = error?.response?.status;
+        const requestUrl: string = error?.config?.url || '';
+        const isLoginRequest = requestUrl.includes('/auth/login');
+
+        if ((status === 401 || status === 403) && !isLoginRequest) {
+            const currentToken = await getToken();
+            if (!currentToken) {
+                return Promise.reject(error);
+            }
+
             console.warn("🔒 [Auth] Token expiré ou invalide. Déconnexion...");
             
             // 1. On vide le stockage (cohérent avec la plateforme)

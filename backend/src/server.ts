@@ -10,13 +10,18 @@ app.use(cors());
 
 const loginLimiter = rateLimit({
     windowMs: 15 * 60 * 1000, // 15 minutes
-    max: 10, // Limite chaque IP à 10 requêtes par fenêtre
-    message: { message: "Trop de tentatives de connexion, veuillez réessayer dans 15 minutes." }
+    max: 50, // Augmenté à 50 pour le développement (réduit en production)
+    message: { message: "Trop de tentatives de connexion, veuillez réessayer dans 15 minutes." },
+    skip: () => {
+        // Skip rate limit si vous êtes en développement (optionnel)
+        return process.env.NODE_ENV === 'development';
+    }
 });
 
 
 
 import authRoutes from './routes/authRoutes';
+// Appliquer le rate limiter UNIQUEMENT sur la route login
 app.use('/api/auth/login', loginLimiter);
 app.use('/api/auth', authRoutes);
 

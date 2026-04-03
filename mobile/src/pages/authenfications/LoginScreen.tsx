@@ -38,7 +38,7 @@ const LoginScreen = ({ navigation }: Props) => {
     const [password, setPassword] = useState<string>('');
     const [rememberMe, setRememberMe] = useState<boolean>(false);
     const [isPasswordVisible, setIsPasswordVisible] = useState(false);
-
+    const [isLoading, setIsLoading] = useState(false);
 
     const { login } = useContext(AuthContext);
 
@@ -50,29 +50,43 @@ const LoginScreen = ({ navigation }: Props) => {
             return;
         }
 
+        setIsLoading(true);
         try {
-            const response = await axiosMobile.post('/auth/login', {
-                email: email,
-                password: password,
-            });
+            console.log("🔐 Tentative de connexion...");
+            const response = await axiosMobile.post('/auth/login', { email, password });
 
+            console.log("✅ Connexion réussie, réponse:", response.data);
             const { token, user } = response.data;
 
-            await login(token);
+            if (!token || !user?.id) {
+                Alert.alert("Erreur", "Réponse serveur invalide");
+                setIsLoading(false);
+                return;
+            }
 
-
-            Alert.alert(`Connexion réussie!`, `Bienvenue, ${user.nom || 'utilisateur'}.`);
-
+            // On appelle le login du contexte avec les deux infos ET on attend le résultat
+            await login(token, user.id);
+            console.log("✅ Token et userId sauvegardés");
+            setIsLoading(false);
 
         } catch (error: any) {
-            console.error("Erreur de connexion:", error);
-            if (error.isAxiosError && error.response) {
-                // TS sait maintenant que error.response existe
-                Alert.alert('Erreur', error.response.data.message || 'Erreur inconnue');
+            console.error("❌ Erreur de connexion:", error);
+            setIsLoading(false);
+            
+            if (error.response?.status === 429) {
+                Alert.alert(
+                    "Trop de tentatives", 
+                    "Vous avez essayé trop de connexions. Veuillez attendre 15 minutes avant de réessayer."
+                );
+            } else if (error.response?.status === 401) {
+                Alert.alert("Erreur", "Email ou mot de passe incorrect");
+            } else if (error.message === "Network Error") {
+                Alert.alert("Erreur", "Problème de connexion réseau");
             } else {
-                Alert.alert('Erreur', 'Impossible de se connecter au serveur.');
+                Alert.alert("Erreur", "Une erreur s'est produite lors de la connexion");
             }
         }
+
     }
 
 
@@ -171,8 +185,14 @@ const LoginScreen = ({ navigation }: Props) => {
                             </TouchableOpacity>
                         </View>
 
-                        <TouchableOpacity style={styles.button} onPress={handleLogin}>
-                            <Text style={styles.buttonText}>Log In</Text>
+                        <TouchableOpacity 
+                            style={[styles.button, isLoading && styles.buttonDisabled]} 
+                            onPress={handleLogin}
+                            disabled={isLoading}
+                        >
+                            <Text style={styles.buttonText}>
+                                {isLoading ? "Connexion en cours..." : "Log In"}
+                            </Text>
                         </TouchableOpacity>
 
                     </View>
@@ -297,6 +317,9 @@ const styles = StyleSheet.create({
         borderRadius: 10,
         alignItems: 'center',
         marginVertical: 10,
+    },
+    buttonDisabled: {
+        opacity: 0.6,
     },
     buttonText: {
         color: '#FFFFFF',
