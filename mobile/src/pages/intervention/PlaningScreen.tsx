@@ -1,5 +1,5 @@
 import React, { useState, useContext, useCallback, useLayoutEffect } from 'react';
-import { View, Text, FlatList, StyleSheet, SafeAreaView, ActivityIndicator, TextInput, ListRenderItem } from 'react-native';
+import { DeviceEventEmitter, View, Text, FlatList, StyleSheet, SafeAreaView, ActivityIndicator, TextInput, ListRenderItem } from 'react-native';
 import axiosMobile from '../../api/axiosMobile';
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect, CompositeNavigationProp } from '@react-navigation/native';
@@ -8,9 +8,11 @@ import { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
 
 // Imports
 import { AuthContext } from '../../contextes/AuthContext';
+import { useNetwork } from '../../contextes/NetworkContext';
 import { RootStackParamList, TabParamList } from '../../types/Navigation';
 import { Intervention } from '../../types/Intervention'; // Import du type
 import { InterventionCard } from '../../component/planing/InterventionCard'; // Import du composant
+import { getLocalInterventions } from '../../services/database';
 
 // Typage Navigation
 type InterventionScreenNavigationProp = CompositeNavigationProp<
@@ -29,16 +31,31 @@ function InterventionScreen({ navigation }: Props) {
     const [searchQuery, setSearchQuery] = useState<string>('');
 
     const { userToken } = useContext(AuthContext);
+    const { isConnected } = useNetwork();
 
     const afficherInterventions = async () => {
-        if (!userToken) return;
+        if (!userToken) {
+            setIsLoading(false);
+            return;
+        }
+
+        setIsLoading(true);
 
         try {
-            const response = await axiosMobile.get<Intervention[]>('interventions/')
-            setInterventions(response.data);
-            setFilteredInterventions(response.data);
+            if (isConnected) {
+                const response = await axiosMobile.get<Intervention[]>('interventions/');
+                setInterventions(response.data);
+                setFilteredInterventions(response.data);
+            } else {
+                const localData = (await getLocalInterventions()) as unknown as Intervention[];
+                setInterventions(localData);
+                setFilteredInterventions(localData);
+            }
         } catch (error: any) {
             console.error("Erreur API :", error.response?.data || error.message);
+            const localData = (await getLocalInterventions()) as unknown as Intervention[];
+            setInterventions(localData);
+            setFilteredInterventions(localData);
         } finally {
             setIsLoading(false);
         }
@@ -47,8 +64,16 @@ function InterventionScreen({ navigation }: Props) {
     useFocusEffect(
         useCallback(() => {
             afficherInterventions();
-        }, [userToken])
+        }, [userToken, isConnected])
     );
+
+    React.useEffect(() => {
+        const subscription = DeviceEventEmitter.addListener('sync_completed', () => {
+            afficherInterventions();
+        });
+
+        return () => subscription.remove();
+    }, [userToken, isConnected]);
 
     const handleSearch = (text: string) => {
         setSearchQuery(text);

@@ -14,6 +14,32 @@ export interface RemoteIntervention {
     failure_reason: string | null;
 }
 
+const syncOneIntervention = async (interv: any): Promise<void> => {
+    const status = interv.statut;
+
+    if (status === 'archiver') {
+        await axiosMobile.patch(`/interventions/${interv.remote_id}/archive`);
+        return;
+    }
+
+    if (status === 'termine' || status === 'echec') {
+        await axiosMobile.put(`/interventions/${interv.remote_id}`, {
+            statut: interv.statut,
+            rapport: interv.rapport,
+            notes_technicien: interv.notes_technicien,
+            failure_reason: interv.failure_reason,
+            signature: interv.signature,
+        });
+        return;
+    }
+
+    // Statuts en cours/prevision: mise a jour notes + rapport uniquement
+    await axiosMobile.patch(`/interventions/${interv.remote_id}/modifier`, {
+        rapport: interv.rapport,
+        notes_technicien: interv.notes_technicien,
+    });
+};
+
 // src/services/sync.ts
 
 export const syncUpdatesUp = async (): Promise<void> => {
@@ -35,13 +61,7 @@ export const syncUpdatesUp = async (): Promise<void> => {
                     continue;
                 }
 
-                await axiosMobile.put(`/interventions/${interv.remote_id}`, {
-                    statut: interv.statut,
-                    rapport: interv.rapport,
-                    notes_technicien: interv.notes_technicien,
-                    failure_reason: interv.failure_reason,
-                    signature: interv.signature
-                });
+                await syncOneIntervention(interv);
                 // Si l'appel API réussit, on marque comme synchronisé
                 await db.runAsync('UPDATE interventions SET is_synced = 1 WHERE remote_id = ?', [interv.remote_id]);
             } catch (error: any) {
@@ -89,9 +109,9 @@ export const syncUpdatesUp = async (): Promise<void> => {
     }
 };
 
-export const syncInterventionsDown = async (idUser: number): Promise<void> => {
+export const syncInterventionsDown = async (_idUser: number): Promise<void> => {
     try {
-        const response = await axiosMobile.get<RemoteIntervention[]>(`/interventions/${idUser}`);
+        const response = await axiosMobile.get<RemoteIntervention[]>('/interventions/');
         const remoteInterventions = response.data;
 
         // --- SÉCURITÉ : On vérifie que c'est bien une liste ---
@@ -102,13 +122,25 @@ export const syncInterventionsDown = async (idUser: number): Promise<void> => {
 
         const db = await getDBConnection();
         const statement = await db.prepareAsync(`
-            INSERT OR REPLACE INTO interventions (
-                remote_id, titre, adresse, date, statut, 
+            INSERT INTO interventions (
+                remote_id, titre, adresse, date, statut,
                 description, nomClient, rapport, notes_technicien, failure_reason, is_synced
             ) VALUES (
-            $remote_id, $titre, $adresse, $date, $statut,
-            $description, $nomClient, $rapport, $notes_technicien, $failure_reason, 1
+                $remote_id, $titre, $adresse, $date, $statut,
+                $description, $nomClient, $rapport, $notes_technicien, $failure_reason, 1
             )
+            ON CONFLICT(remote_id) DO UPDATE SET
+                titre = excluded.titre,
+                adresse = excluded.adresse,
+                date = excluded.date,
+                statut = excluded.statut,
+                description = excluded.description,
+                nomClient = excluded.nomClient,
+                rapport = excluded.rapport,
+                notes_technicien = excluded.notes_technicien,
+                failure_reason = excluded.failure_reason,
+                is_synced = 1
+            WHERE interventions.is_synced = 1
         `);
 
         for (const interv of remoteInterventions) {

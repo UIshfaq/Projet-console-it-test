@@ -29,6 +29,20 @@ export interface LocalMaterial {
     is_synced: number;
 }
 
+export interface LocalPlanningIntervention {
+    id: number;
+    titre: string;
+    adresse: string;
+    date: string;
+    statut: string;
+    description: string | null;
+    nomClient: string | null;
+    rapport: string | null;
+    notes_technicien: string | null;
+    failure_reason: string | null;
+    signature: string | null;
+}
+
 // --- CONNEXION ---
 export const getDBConnection = async () => {
     return await SQLite.openDatabaseAsync('technician_app.db');
@@ -100,6 +114,33 @@ export const getLocalInterventionById = async (remoteId: number): Promise<LocalI
     } catch (error) {
         console.error(`Erreur lecture intervention ${remoteId}:`, error);
         return null;
+    }
+};
+
+export const getLocalInterventions = async (): Promise<LocalPlanningIntervention[]> => {
+    try {
+        const db = await getDBConnection();
+        return await db.getAllAsync<LocalPlanningIntervention>(
+            `SELECT
+                remote_id AS id,
+                titre,
+                adresse,
+                date,
+                statut,
+                description,
+                nomClient,
+                rapport,
+                notes_technicien,
+                failure_reason,
+                signature
+             FROM interventions
+             WHERE remote_id IS NOT NULL
+             AND statut NOT IN ('annule', 'archiver')
+             ORDER BY date ASC`
+        );
+    } catch (error) {
+        console.error('Erreur lecture planning local :', error);
+        return [];
     }
 };
 

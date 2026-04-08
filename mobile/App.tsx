@@ -21,7 +21,7 @@ import LoadingScreen from "./src/pages/authenfications/LoadScreen";
 import InventaireScreen from "./src/pages/inventaire/inventaireScreen";
 import ProfileScreen from "./src/pages/authenfications/ProfileScreen";
 import {NetworkProvider, useNetwork} from "./src/contextes/NetworkContext";
-import {View,Text} from "react-native";
+import {DeviceEventEmitter, View,Text} from "react-native";
 import {syncInterventionsDown, syncUpdatesUp} from "./src/services/sync";
 
 // 3. C'est ICI la magie : on injecte nos types dans les créateurs de navigation
@@ -124,6 +124,7 @@ const AppNavigator = () => (
                          await syncUpdatesUp();
                          await syncInterventionsDown(userId);
                          console.log("✅ Synchronisation complète terminée avec succès.");
+                         DeviceEventEmitter.emit('sync_completed');
                      } catch (error: any) {
                          // Si l'erreur est une 401 ici, c'est que le token en cache est périmé
                          // L'interceptor axios gérera la déconnexion automatique
