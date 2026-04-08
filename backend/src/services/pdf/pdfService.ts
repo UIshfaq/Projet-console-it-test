@@ -13,6 +13,7 @@ export interface PdfData {
     created_at?: string;
     notes_technicien?: string | null;
     failure_reason?: string | null;
+    signature?: string | null;
     nomTechnicien: string;
     materials?: {
         name: string;
@@ -122,6 +123,56 @@ export const generateInterventionPdf = async (data: PdfData): Promise<Buffer> =>
                 yPosition += 25;
             });
         }
+
+        if (data.signature) {
+            checkSpaceAndAddPage(120);
+            yPosition += 15;
+            doc.fillColor("#374151").font('Helvetica-Bold').fontSize(12).text("Signature du client", 50, yPosition);
+            yPosition += 20;
+
+            try {
+                // Support pour base64 ou chemin de fichier
+                let imageAdded = false;
+                
+                if (data.signature.startsWith('data:image')) {
+                    // Si c'est du base64
+                    try {
+                        const base64Data = data.signature.split(',')[1];
+                        const buffer = Buffer.from(base64Data, 'base64');
+                        doc.image(buffer, 50, yPosition, { width: 150, height: 80 });
+                        imageAdded = true;
+                    } catch (err) {
+                        console.warn(`[PDF Warn] Erreur décoding base64: ${err}`);
+                    }
+                } else if (data.signature.startsWith('/') || data.signature.startsWith('.')) {
+                    // Si c'est un chemin de fichier
+                    const possiblePath = path.join(process.cwd(), data.signature);
+                    if (fs.existsSync(possiblePath)) {
+                        doc.image(possiblePath, 50, yPosition, { width: 150, height: 80 });
+                        imageAdded = true;
+                    } else if (fs.existsSync(data.signature)) {
+                        doc.image(data.signature, 50, yPosition, { width: 150, height: 80 });
+                        imageAdded = true;
+                    } else {
+                        console.warn(`[PDF Warn] Signature fichier non trouvé: ${data.signature}`);
+                    }
+                } else {
+                    console.warn(`[PDF Warn] Format de signature inconnu: ${data.signature.substring(0, 50)}...`);
+                }
+                
+                if (imageAdded) {
+                    yPosition += 95;
+                } else {
+                    doc.fillColor("#991b1b").font('Helvetica').fontSize(10).text("Signature non disponible", 55, yPosition);
+                    yPosition += 25;
+                }
+            } catch (err) {
+                console.warn(`[PDF Warn] Erreur lors du chargement de la signature : ${err}`);
+                doc.fillColor("#991b1b").font('Helvetica').fontSize(10).text("Signature non disponible", 55, yPosition);
+                yPosition += 25;
+            }
+        }
+
 
         const totalPages = doc.bufferedPageRange().count;
         for (let i = 0; i < totalPages; i++) {
