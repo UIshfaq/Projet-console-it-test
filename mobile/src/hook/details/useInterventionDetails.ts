@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Alert } from 'react-native';
+import { Alert, Platform } from 'react-native';
 import axiosMobile from '../../api/axiosMobile';
 import { useNetwork } from "../../contextes/NetworkContext";
 import { Intervention, InterventionStatus } from '../../types/Intervention';
@@ -36,11 +36,32 @@ export const useInterventionDetails = (interventionId: number, navigation: any) 
     const [isSignatureVisible, setSignatureVisible] = useState<boolean>(false);
     const [signatureData, setSignatureData] = useState<string | null>(null);
 
+    const hydraterDepuisAPI = async () => {
+        const response = await axiosMobile.get(`/interventions/${interventionId}`);
+        const remoteIntervention = response.data;
+
+        setDetailIntervention(remoteIntervention as Intervention);
+
+        if (Array.isArray(remoteIntervention?.materials)) {
+            setMaterials(remoteIntervention.materials as Material[]);
+        } else {
+            setMaterials([]);
+        }
+
+        if (remoteIntervention?.rapport) setRapport(remoteIntervention.rapport);
+        if (remoteIntervention?.notes_technicien) setNotesTechnicien(remoteIntervention.notes_technicien);
+    };
+
     // 1. CHARGEMENT DES DONNÉES (Priorité Local)
     const chargerDonnees = async () => {
         setLoading(true);
         setIsLoadingMaterials(true);
         try {
+            if (Platform.OS === 'web') {
+                await hydraterDepuisAPI();
+                return;
+            }
+
             // Lecture dans SQLite
             const data = await getLocalInterventionById(interventionId);
             if (data) {
@@ -51,10 +72,13 @@ export const useInterventionDetails = (interventionId: number, navigation: any) 
                 // Chargement des matériaux locaux
                 const localMaterials = await getLocalMaterialsByInterventionId(interventionId);
                 setMaterials(localMaterials as unknown as Material[]);
+                // En ligne, on rafraîchit aussi depuis l'API pour éviter un affichage vide ou obsolète
+                if (isConnected) {
+                    await hydraterDepuisAPI();
+                }
             } else if (isConnected) {
                 // Si pas de cache mais réseau, on tente un fetch classique
-                const response = await axiosMobile.get(`/interventions/${interventionId}`);
-                setDetailIntervention(response.data);
+                await hydraterDepuisAPI();
             }
         } catch (e) {
             console.error("Erreur chargement :", e);
@@ -66,7 +90,7 @@ export const useInterventionDetails = (interventionId: number, navigation: any) 
 
     useEffect(() => {
         chargerDonnees();
-    }, [interventionId]);
+    }, [interventionId, isConnected]);
 
     // 2. LOGIQUE MÉTIER
 
@@ -157,14 +181,12 @@ export const useInterventionDetails = (interventionId: number, navigation: any) 
         if (!materialId) return;
         const newStatus = !(currentStatus === 1 || currentStatus === true);
 
-        // Update UI immédiat
         setMaterials(prev => prev.map(m => (m.material_id === materialId || m.id === materialId) ? { ...m, is_checked: newStatus } : m));
 
         try {
-            // Update Local
-            await updateLocalMaterialCheck(materialId, newStatus ? 1 : 0);
+            // ICI : On passe interventionId en premier paramètre !
+            await updateLocalMaterialCheck(interventionId, materialId, newStatus ? 1 : 0);
 
-            // Update Server
             if (isConnected) {
                 await axiosMobile.put(`/inventaires/${interventionId}/materials/${materialId}`, { is_checked: newStatus ? 1 : 0 });
             }

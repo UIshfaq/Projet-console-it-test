@@ -77,6 +77,19 @@ function DetailScreen({route, navigation}: Props) {
     };
 
     if (isLoading || !intervention) {
+        if (!isLoading && !intervention) {
+            return (
+                <View style={{flex: 1, justifyContent: 'center', alignItems: 'center', padding: 20}}>
+                    <Text style={{fontSize: 16, fontWeight: '600', color: '#B91C1C', textAlign: 'center'}}>
+                        Impossible de charger les détails de cette intervention.
+                    </Text>
+                    <Text style={{marginTop: 8, color: '#666', textAlign: 'center'}}>
+                        Vérifie ta connexion ou les droits du compte connecté.
+                    </Text>
+                </View>
+            );
+        }
+
         return (
             <View style={{flex: 1, justifyContent: 'center', alignItems: 'center'}}>
                 <ActivityIndicator size="large" color="#6A5AE0"/>

@@ -12,6 +12,9 @@ export interface RemoteIntervention {
     rapport: string | null;
     notes_technicien: string | null;
     failure_reason: string | null;
+    signature?: string | null;
+    equipe?: string | null;
+    materials?: any[];
 }
 
 const syncOneIntervention = async (interv: any): Promise<void> => {
@@ -46,123 +49,106 @@ export const syncUpdatesUp = async (): Promise<void> => {
     try {
         const db = await getDBConnection();
 
-        // 1. Chercher les interventions modifiées localement
-        const pendingInterventions = await db.getAllAsync<any>(
-            'SELECT * FROM interventions WHERE is_synced = 0'
-        );
-
-        console.log(`📤 ${pendingInterventions.length} interventions en attente de synchro montante`);
-
+        // 1. Interventions (inchangé)
+        const pendingInterventions = await db.getAllAsync<any>('SELECT * FROM interventions WHERE is_synced = 0');
         for (const interv of pendingInterventions) {
             try {
-                // Vérifier que remote_id existe
-                if (!interv.remote_id) {
-                    console.warn(`⚠️ Intervention sans remote_id, ignorée`);
-                    continue;
-                }
-
+                if (!interv.remote_id) continue;
                 await syncOneIntervention(interv);
-                // Si l'appel API réussit, on marque comme synchronisé
                 await db.runAsync('UPDATE interventions SET is_synced = 1 WHERE remote_id = ?', [interv.remote_id]);
             } catch (error: any) {
-                // Si c'est une erreur 401, elle sera gérée par l'interceptor
-                if (error.response?.status === 401) {
-                    console.warn("🔒 Token expiré pendant syncUpdatesUp");
-                    throw error; // Propaguer pour arrêter la synchro
-                }
-                console.warn(`⚠️ Erreur synchro montante intervention ${interv.remote_id}:`, error);
+                if (error.response?.status === 401) throw error;
             }
         }
 
-        // 2. Chercher les matériaux cochés localement
-        const pendingMaterials = await db.getAllAsync<any>(
-            'SELECT * FROM intervention_materials WHERE is_synced = 0'
-        );
-
-        console.log(`📤 ${pendingMaterials.length} matériaux en attente de synchro montante`);
-
+        // 2. Matériaux (Mise à jour de la clause WHERE)
+        const pendingMaterials = await db.getAllAsync<any>('SELECT * FROM intervention_materials WHERE is_synced = 0');
         for (const mat of pendingMaterials) {
             try {
-                // Vérifier que les IDs existent
-                if (!mat.intervention_remote_id || !mat.material_remote_id) {
-                    console.warn(`⚠️ Matériel sans remote_id, ignoré`);
-                    continue;
-                }
-
+                if (!mat.intervention_remote_id || !mat.material_remote_id) continue;
                 await axiosMobile.put(`/inventaires/${mat.intervention_remote_id}/materials/${mat.material_remote_id}`, {
                     is_checked: mat.is_checked
                 });
-                await db.runAsync('UPDATE intervention_materials SET is_synced = 1 WHERE remote_id = ?', [mat.remote_id]);
+                await db.runAsync(
+                    'UPDATE intervention_materials SET is_synced = 1 WHERE intervention_remote_id = ? AND material_remote_id = ?',
+                    [mat.intervention_remote_id, mat.material_remote_id]
+                );
             } catch (error: any) {
-                if (error.response?.status === 401) {
-                    console.warn("🔒 Token expiré pendant syncUpdatesUp (materials)");
-                    throw error;
-                }
-                console.warn(`⚠️ Erreur synchro montante matériel ${mat.remote_id}:`, error);
+                if (error.response?.status === 401) throw error;
             }
         }
-
-        console.log("✅ Synchronisation montante terminée avec succès.");
     } catch (error) {
-        console.error("▲ Échec de la synchronisation montante :", error);
-        throw error; // Propaguer l'erreur pour arrêter la synchro
+        throw error;
     }
 };
 
 export const syncInterventionsDown = async (_idUser: number): Promise<void> => {
     try {
-        const response = await axiosMobile.get<RemoteIntervention[]>('/interventions/');
+        const response = await axiosMobile.get<any[]>('/interventions/');
         const remoteInterventions = response.data;
-
-        // --- SÉCURITÉ : On vérifie que c'est bien une liste ---
-        if (!Array.isArray(remoteInterventions)) {
-            console.warn("⚠️ Format reçu invalide (attendu: Array) :", remoteInterventions);
-            return;
-        }
+        if (!Array.isArray(remoteInterventions)) return;
 
         const db = await getDBConnection();
-        const statement = await db.prepareAsync(`
-            INSERT INTO interventions (
-                remote_id, titre, adresse, date, statut,
-                description, nomClient, rapport, notes_technicien, failure_reason, is_synced
-            ) VALUES (
-                $remote_id, $titre, $adresse, $date, $statut,
-                $description, $nomClient, $rapport, $notes_technicien, $failure_reason, 1
-            )
-            ON CONFLICT(remote_id) DO UPDATE SET
-                titre = excluded.titre,
-                adresse = excluded.adresse,
-                date = excluded.date,
-                statut = excluded.statut,
-                description = excluded.description,
-                nomClient = excluded.nomClient,
-                rapport = excluded.rapport,
-                notes_technicien = excluded.notes_technicien,
-                failure_reason = excluded.failure_reason,
-                is_synced = 1
-            WHERE interventions.is_synced = 1
-        `);
 
         for (const interv of remoteInterventions) {
-            await statement.executeAsync({
-                $remote_id: interv.id,
-                $titre: interv.titre,
-                $adresse: interv.adresse,
-                $date: typeof interv.date === 'string' ? interv.date : new Date(interv.date).toISOString(),
-                $statut: interv.statut,
-                $description: interv.description || null,
-                $nomClient: interv.nomClient || null,
-                $rapport: interv.rapport || null,
-                $notes_technicien: interv.notes_technicien || null,
-                $failure_reason: interv.failure_reason || null,
-            });
+            let fullInterv: RemoteIntervention = interv;
+
+            // On récupère les détails complets pour avoir l'équipe et le matériel en cache offline.
+            try {
+                const detailResponse = await axiosMobile.get<RemoteIntervention>(`/interventions/${interv.id}`);
+                if (detailResponse?.data) {
+                    fullInterv = detailResponse.data;
+                }
+            } catch {
+                // Fallback silencieux sur la version liste si un détail échoue.
+            }
+
+            // 1. Sauvegarder l'intervention (ON INSERE 'equipe' DIRECTEMENT !)
+            await db.runAsync(`
+                INSERT INTO interventions (
+                    remote_id, titre, adresse, date, statut,
+                    description, nomClient, rapport, notes_technicien, failure_reason, signature, equipe, is_synced
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1)
+                    ON CONFLICT(remote_id) DO UPDATE SET
+                    titre = excluded.titre, adresse = excluded.adresse, date = excluded.date,
+                                                  statut = excluded.statut, description = excluded.description, nomClient = excluded.nomClient,
+                                                  rapport = excluded.rapport, notes_technicien = excluded.notes_technicien,
+                                                  failure_reason = excluded.failure_reason, signature = excluded.signature,
+                                                  equipe = excluded.equipe, is_synced = 1
+            `, [
+                fullInterv.id, fullInterv.titre, fullInterv.adresse,
+                typeof fullInterv.date === 'string' ? fullInterv.date : new Date(fullInterv.date).toISOString(),
+                fullInterv.statut, fullInterv.description || null, fullInterv.nomClient || null,
+                fullInterv.rapport || null, fullInterv.notes_technicien || null, fullInterv.failure_reason || null, fullInterv.signature || null,
+                fullInterv.equipe || null
+            ]);
+
+            // 2. Nettoyer et Sauvegarder le Matériel
+            await db.runAsync('DELETE FROM intervention_materials WHERE intervention_remote_id = ?', [fullInterv.id]);
+
+            if (Array.isArray(fullInterv.materials)) {
+                for (const mat of fullInterv.materials) {
+                    const materialId = mat.id; // Ton JSON utilise "id"
+
+                    await db.runAsync(`
+                        INSERT INTO materials (remote_id, name) VALUES (?, ?)
+                            ON CONFLICT(remote_id) DO UPDATE SET name = excluded.name
+                    `, [materialId, mat.name || 'Inconnu']);
+
+                    await db.runAsync(`
+                        INSERT INTO intervention_materials (
+                            intervention_remote_id, material_remote_id, quantity_required, to_bring, is_checked, is_synced
+                        ) VALUES (?, ?, ?, ?, ?, 1)
+                    `, [
+                        fullInterv.id, materialId, mat.quantity_required || 1,
+                        mat.to_bring !== undefined ? mat.to_bring : 1, mat.is_checked || 0
+                    ]);
+                }
+            }
         }
-
-        await statement.finalizeAsync();
-
-        console.log(`✅ ${remoteInterventions.length} interventions synchronisées en local.`);
+        console.log(`✅ ${remoteInterventions.length} interventions synchronisées avec équipe et matériel.`);
     } catch (error) {
-        console.error('❌ Échec de la synchronisation des interventions:', error);
+        console.error('❌ Échec de la synchronisation:', error);
         throw error;
     }
 };

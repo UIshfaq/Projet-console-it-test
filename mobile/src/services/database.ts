@@ -15,6 +15,7 @@ export interface LocalIntervention {
     notes_technicien: string | null;
     failure_reason: string | null;
     signature: string | null;
+    equipe?: string | null;
     is_synced: number; // 1 = synchronisé, 0 = modification locale à envoyer
 }
 
@@ -35,17 +36,19 @@ export interface LocalPlanningIntervention {
     adresse: string;
     date: string;
     statut: string;
-    description: string | null;
-    nomClient: string | null;
+    description: string
+    nomClient: string
     rapport: string | null;
     notes_technicien: string | null;
     failure_reason: string | null;
     signature: string | null;
+    equipe: string;
 }
 
 // --- CONNEXION ---
+// Dans database.ts
 export const getDBConnection = async () => {
-    return await SQLite.openDatabaseAsync('technician_app.db');
+    return await SQLite.openDatabaseAsync('technician_app_v3.db');
 };
 
 // --- INITIALISATION DU SCHÉMA ---
@@ -53,12 +56,13 @@ export const initDB = async (): Promise<void> => {
     try {
         const db = await getDBConnection();
 
-        // Configuration du mode WAL pour la performance et activation des clés étrangères
         await db.execAsync(`
             PRAGMA journal_mode = WAL;
             PRAGMA foreign_keys = ON;
 
-            -- Table des Interventions (Cache du planning)
+
+
+            -- Table des Interventions (Avec 'equipe TEXT')
             CREATE TABLE IF NOT EXISTS interventions (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 remote_id INTEGER UNIQUE,
@@ -72,6 +76,7 @@ export const initDB = async (): Promise<void> => {
                 notes_technicien TEXT,
                 failure_reason TEXT,
                 signature TEXT,
+                equipe TEXT, 
                 is_synced INTEGER DEFAULT 1
             );
 
@@ -86,23 +91,22 @@ export const initDB = async (): Promise<void> => {
             -- Table de l'Inventaire par Intervention
             CREATE TABLE IF NOT EXISTS intervention_materials (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
-                remote_id INTEGER UNIQUE,
                 intervention_remote_id INTEGER,
                 material_remote_id INTEGER,
                 quantity_required INTEGER DEFAULT 1,
                 to_bring INTEGER DEFAULT 1,
                 is_checked INTEGER DEFAULT 0,
-                is_synced INTEGER DEFAULT 1
+                is_synced INTEGER DEFAULT 1,
+                FOREIGN KEY (intervention_remote_id) REFERENCES interventions(remote_id) ON DELETE CASCADE,
+                FOREIGN KEY (material_remote_id) REFERENCES materials(remote_id) ON DELETE CASCADE
             );
         `);
-        console.log('✅ Base de données SQLite locale initialisée');
+        console.log('✅ Base de données SQLite V2 écrasée et initialisée proprement');
     } catch (error) {
         console.error('❌ Erreur initialisation SQLite:', error);
         throw error;
     }
 };
-
-
 // Récupérer une mission précise par son ID distant
 export const getLocalInterventionById = async (remoteId: number): Promise<LocalIntervention | null> => {
     try {
@@ -122,42 +126,34 @@ export const getLocalInterventions = async (): Promise<LocalPlanningIntervention
         const db = await getDBConnection();
         return await db.getAllAsync<LocalPlanningIntervention>(
             `SELECT
-                remote_id AS id,
-                titre,
-                adresse,
-                date,
-                statut,
-                description,
-                nomClient,
-                rapport,
-                notes_technicien,
-                failure_reason,
-                signature
+                 remote_id AS id, titre, adresse, date, statut,
+                 description, nomClient, rapport, notes_technicien,
+                 failure_reason, signature, equipe
              FROM interventions
-             WHERE remote_id IS NOT NULL
-             AND statut NOT IN ('annule', 'archiver')
+             WHERE remote_id IS NOT NULL AND statut NOT IN ('annule', 'archiver')
              ORDER BY date ASC`
         );
     } catch (error) {
-        console.error('Erreur lecture planning local :', error);
         return [];
     }
 };
-
-// Récupérer la liste du matériel pour une mission
 export const getLocalMaterialsByInterventionId = async (interventionRemoteId: number) => {
     try {
         const db = await getDBConnection();
         return await db.getAllAsync(
-            'SELECT * FROM intervention_materials WHERE intervention_remote_id = ?',
+            `SELECT
+                 im.*,
+                 im.material_remote_id AS material_id,
+                 m.name, m.reference
+             FROM intervention_materials im
+                      JOIN materials m ON im.material_remote_id = m.remote_id
+             WHERE im.intervention_remote_id = ?`,
             [interventionRemoteId]
         );
     } catch (error) {
-        console.error("Erreur lecture matériaux locaux :", error);
         return [];
     }
 };
-
 // --- FONCTIONS D'ÉCRITURE ---
 
 // Mettre à jour le statut, le rapport ou la signature (Clôture)
@@ -200,17 +196,15 @@ export const updateLocalInterventionStatus = async (
     }
 };
 
-export const updateLocalMaterialCheck = async (materialRemoteId: number, isChecked: number) => {
+export const updateLocalMaterialCheck = async (interventionRemoteId: number, materialRemoteId: number, isChecked: number) => {
     try {
         const db = await getDBConnection();
-        // On met is_synced à 0 pour dire au futur script de synchro : "Ceci doit monter au serveur"
         await db.runAsync(
-            'UPDATE intervention_materials SET is_checked = ?, is_synced = 0 WHERE remote_id = ?',
-            [isChecked, materialRemoteId]
+            'UPDATE intervention_materials SET is_checked = ?, is_synced = 0 WHERE intervention_remote_id = ? AND material_remote_id = ?',
+            [isChecked, interventionRemoteId, materialRemoteId]
         );
         return true;
     } catch (error) {
-        console.error("Erreur mise à jour matériel local :", error);
         return false;
     }
 };
