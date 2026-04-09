@@ -196,15 +196,38 @@ export const updateLocalInterventionStatus = async (
     }
 };
 
-export const updateLocalMaterialCheck = async (interventionRemoteId: number, materialRemoteId: number, isChecked: number) => {
+export const updateLocalMaterialCheck = async (
+    interventionRemoteId: number,
+    materialIdentifier: number,
+    isChecked: number
+) => {
     try {
         const db = await getDBConnection();
-        await db.runAsync(
+        const byRemoteId = await db.runAsync(
             'UPDATE intervention_materials SET is_checked = ?, is_synced = 0 WHERE intervention_remote_id = ? AND material_remote_id = ?',
-            [isChecked, interventionRemoteId, materialRemoteId]
+            [isChecked, interventionRemoteId, materialIdentifier]
         );
+
+        if ((byRemoteId?.changes ?? 0) > 0) {
+            return true;
+        }
+
+        // Fallback: certains écrans peuvent transmettre l'id local de la ligne au lieu du material_remote_id.
+        const byLocalRowId = await db.runAsync(
+            'UPDATE intervention_materials SET is_checked = ?, is_synced = 0 WHERE intervention_remote_id = ? AND id = ?',
+            [isChecked, interventionRemoteId, materialIdentifier]
+        );
+
+        if ((byLocalRowId?.changes ?? 0) === 0) {
+            console.warn(
+                `Aucune ligne mise à jour pour le matériel ${materialIdentifier} sur l'intervention ${interventionRemoteId}`
+            );
+            return false;
+        }
+
         return true;
     } catch (error) {
+        console.error('Erreur updateLocalMaterialCheck:', error);
         return false;
     }
 };
