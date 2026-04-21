@@ -181,6 +181,11 @@ export const useInterventionDetails = (interventionId: number, navigation: any) 
         if (!materialId) return;
         const newStatus = !(currentStatus === 1 || currentStatus === true);
 
+        const targetMaterial = materials.find(
+            (m) => m.material_id === materialId || m.id === materialId
+        );
+        const remoteMaterialId = targetMaterial?.material_id ?? materialId;
+
         setMaterials(prev => prev.map(m => (m.material_id === materialId || m.id === materialId) ? { ...m, is_checked: newStatus } : m));
 
         try {
@@ -188,7 +193,7 @@ export const useInterventionDetails = (interventionId: number, navigation: any) 
             await updateLocalMaterialCheck(interventionId, materialId, newStatus ? 1 : 0);
 
             if (isConnected) {
-                await axiosMobile.put(`/inventaires/${interventionId}/materials/${materialId}`, { is_checked: newStatus ? 1 : 0 });
+                await axiosMobile.put(`/inventaires/${interventionId}/materials/${remoteMaterialId}`, { is_checked: newStatus ? 1 : 0 });
             }
         } catch (e) {
             console.error("Erreur toggle matériel:", e);

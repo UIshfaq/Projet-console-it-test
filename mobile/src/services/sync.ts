@@ -58,6 +58,8 @@ export const syncUpdatesUp = async (): Promise<void> => {
                 await db.runAsync('UPDATE interventions SET is_synced = 1 WHERE remote_id = ?', [interv.remote_id]);
             } catch (error: any) {
                 if (error.response?.status === 401) throw error;
+                console.error(`❌ Sync intervention échouée (remote_id=${interv.remote_id})`, error?.response?.data || error);
+                throw error;
             }
         }
 
@@ -75,6 +77,11 @@ export const syncUpdatesUp = async (): Promise<void> => {
                 );
             } catch (error: any) {
                 if (error.response?.status === 401) throw error;
+                console.error(
+                    `❌ Sync matériel échouée (intervention=${mat.intervention_remote_id}, material=${mat.material_remote_id})`,
+                    error?.response?.data || error
+                );
+                throw error;
             }
         }
     } catch (error) {
@@ -89,6 +96,14 @@ export const syncInterventionsDown = async (_idUser: number): Promise<void> => {
         if (!Array.isArray(remoteInterventions)) return;
 
         const db = await getDBConnection();
+
+        const pendingLocalMaterials = await db.getFirstAsync<{ count: number }>(
+            'SELECT COUNT(*) as count FROM intervention_materials WHERE is_synced = 0'
+        );
+        if ((pendingLocalMaterials?.count ?? 0) > 0) {
+            console.warn('⚠️ Sync down ignorée: des checks matériels locaux ne sont pas encore synchronisés.');
+            return;
+        }
 
         for (const interv of remoteInterventions) {
             let fullInterv: RemoteIntervention = interv;
@@ -118,9 +133,9 @@ export const syncInterventionsDown = async (_idUser: number): Promise<void> => {
             `, [
                 fullInterv.id, fullInterv.titre, fullInterv.adresse,
                 typeof fullInterv.date === 'string' ? fullInterv.date : new Date(fullInterv.date).toISOString(),
-                fullInterv.statut, fullInterv.description || null, fullInterv.nomClient || null,
-                fullInterv.rapport || null, fullInterv.notes_technicien || null, fullInterv.failure_reason || null, fullInterv.signature || null,
-                fullInterv.equipe || null
+                fullInterv.statut, fullInterv.description ?? null, fullInterv.nomClient ?? null,
+                fullInterv.rapport ?? null, fullInterv.notes_technicien ?? null, fullInterv.failure_reason ?? null, fullInterv.signature ?? null,
+                fullInterv.equipe ?? null
             ]);
 
             // 2. Nettoyer et Sauvegarder le Matériel

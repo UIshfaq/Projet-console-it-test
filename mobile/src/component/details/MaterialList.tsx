@@ -26,11 +26,12 @@ export const MaterialList = ({ materials, isLoading, onToggle }: Props) => {
 
                     {materielAEmporter.map((item, index) => {
                         const isChecked = item.is_checked === 1 || item.is_checked === true;
+                        const materialIdForToggle = (item.material_id ?? item.id) ?? 0;
                         return (
                             <TouchableOpacity
                                 key={index}
                                 style={[styles.itemRow, isChecked && styles.itemRowChecked]}
-                                onPress={() => onToggle((item.id || item.material_id) ?? 0, item.is_checked)}
+                                onPress={() => onToggle(materialIdForToggle, item.is_checked)}
                             >
                                 <View style={styles.checkboxContainer}>
                                     <Ionicons

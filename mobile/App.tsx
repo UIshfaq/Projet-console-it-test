@@ -1,4 +1,4 @@
-import React, {useContext, useEffect} from "react";
+import React, {useContext, useEffect, useRef} from "react";
 import { NavigationContainer } from "@react-navigation/native";
 import { createStackNavigator } from "@react-navigation/stack";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
@@ -110,14 +110,17 @@ const AppNavigator = () => (
 
     function AppNavigatorLogic() {
          const { isLoading, userToken, userId } = useContext(AuthContext); // Récupère userId
-         const { isConnected } = useNetwork();
+         const { isConnected, isInternetReachable } = useNetwork();
          const insets = useSafeAreaInsets();
+         const wasOnlineRef = useRef<boolean>(false);
+
+         const isOnline = isConnected && isInternetReachable !== false;
 
          useEffect(() => {
              const handleSync = async () => {
                  // CRITIQUE : On ajoute la vérification de userToken
                  // Si userToken est null, on ne tente rien car l'API rejettera la requête
-                 if (isConnected && userToken && userId) {
+                 if (isOnline && userToken && userId) {
                      try {
                          console.log("🌐 Réseau et Token OK : Lancement synchro...");
                          console.log("✅ Base de données SQLite locale initialisée");
@@ -137,8 +140,16 @@ const AppNavigator = () => (
                  }
              };
 
-             handleSync();
-         }, [isConnected, userToken, userId]);
+             // Déclenche au passage offline -> online et au chargement du token utilisateur.
+             const cameBackOnline = !wasOnlineRef.current && isOnline;
+             const hasSession = Boolean(userToken && userId);
+
+             if (cameBackOnline || hasSession) {
+                 handleSync();
+             }
+
+             wasOnlineRef.current = isOnline;
+         }, [isOnline, userToken, userId]);
 
     if (isLoading) {
         return <LoadingScreen />;
